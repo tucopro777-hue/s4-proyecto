@@ -1,0 +1,12 @@
+<nav class="navegacion" aria-label="Principal">
+  <span class="marca">Finanzas</span>
+
+  <ul class="enlaces">
+    <li><a routerLink="/dashboard" routerLinkActive="activo">Panel</a></li>
+    <li><a routerLink="/billeteras" routerLinkActive="activo">Billeteras</a></li>
+    <li><a routerLink="/categorias" routerLinkActive="activo">Categorías</a></li>
+    <li><a routerLink="/transacciones" routerLinkActive="activo">Movimientos</a></li>
+  </ul>
+
+  <button type="button" class="salir" (click)="cerrarSesion()">Cerrar sesión</button>
+</nav>

@@ -1,0 +1,144 @@
+<app-navegacion />
+
+<main class="categorias-page">
+  <header class="categorias-header">
+    <span class="marca">Finanzas</span>
+    <h1>Mis categorías</h1>
+    <p>Organiza tus ingresos y gastos con tipo, color e icono propios.</p>
+  </header>
+
+  @if (error) {
+    <div class="alert-error" role="alert">{{ error }}</div>
+  }
+  @if (exito) {
+    <div class="alert-exito" role="status">{{ exito }}</div>
+  }
+
+  <div class="categorias-grid">
+    <section class="tarjeta">
+      <h2>Nueva categoría</h2>
+
+      <form [formGroup]="form" (ngSubmit)="registrar()" novalidate>
+        <div class="form-field" [class.invalido]="campoInvalido(form.controls.nombre)">
+          <label for="nombre">Nombre</label>
+          <input
+            id="nombre"
+            type="text"
+            formControlName="nombre"
+            maxlength="50"
+            placeholder="Ej. Supermercado"
+          />
+          @if (campoInvalido(form.controls.nombre)) {
+            <small>El nombre es obligatorio.</small>
+          }
+        </div>
+
+        <fieldset class="form-field">
+          <legend>Tipo</legend>
+          <div class="opciones-tipo">
+            @for (tipo of tipos; track tipo.valor) {
+              <label class="opcion-tipo" [class.seleccionada]="form.controls.tipo.value === tipo.valor">
+                <input type="radio" formControlName="tipo" [value]="tipo.valor" />
+                {{ tipo.etiqueta }}
+              </label>
+            }
+          </div>
+        </fieldset>
+
+        <div class="form-field">
+          <label for="color">Color</label>
+          <div class="fila-color">
+            <input id="color" type="color" formControlName="color" />
+            <span class="codigo-color">{{ form.controls.color.value }}</span>
+          </div>
+        </div>
+
+        <fieldset class="form-field">
+          <legend>Icono</legend>
+          <div class="iconos">
+            @for (icono of iconos; track icono.clave) {
+              <label
+                class="icono"
+                [class.seleccionado]="form.controls.icono.value === icono.clave"
+                [title]="icono.etiqueta"
+                [attr.aria-label]="icono.etiqueta"
+              >
+                <input type="radio" formControlName="icono" [value]="icono.clave" />
+                <span aria-hidden="true">{{ icono.simbolo }}</span>
+              </label>
+            }
+          </div>
+        </fieldset>
+
+        <div class="vista-previa">
+          <span
+            class="chip"
+            [style.background-color]="form.controls.color.value + '26'"
+            [style.color]="form.controls.color.value"
+          >
+            <span aria-hidden="true">{{ simboloIcono(form.controls.icono.value) }}</span>
+            {{ form.controls.nombre.value.trim() || 'Vista previa' }}
+          </span>
+        </div>
+
+        <button type="submit" class="btn-primary" [disabled]="guardando">
+          @if (guardando) {
+            Guardando...
+          } @else {
+            Crear categoría
+          }
+        </button>
+      </form>
+    </section>
+
+    <section class="tarjeta">
+      @if (cargando) {
+        <p class="estado">Cargando categorías...</p>
+      } @else {
+        <h2>Gastos ({{ gastos.length }})</h2>
+        <ul class="lista">
+          @for (categoria of gastos; track categoria.id) {
+            <li class="item">
+              <span class="chip" [style.background-color]="categoria.color + '26'" [style.color]="categoria.color">
+                <span aria-hidden="true">{{ simboloIcono(categoria.icono) }}</span>
+                {{ categoria.nombre }}
+              </span>
+              <button
+                type="button"
+                class="btn-desactivar"
+                [disabled]="desactivandoId === categoria.id"
+                (click)="desactivar(categoria)"
+              >
+                {{ desactivandoId === categoria.id ? 'Desactivando...' : 'Desactivar' }}
+              </button>
+            </li>
+          } @empty {
+            <li class="estado">No tienes categorías de gasto.</li>
+          }
+        </ul>
+
+        <h2 class="subtitulo">Ingresos ({{ ingresos.length }})</h2>
+        <ul class="lista">
+          @for (categoria of ingresos; track categoria.id) {
+            <li class="item">
+              <span class="chip" [style.background-color]="categoria.color + '26'" [style.color]="categoria.color">
+                <span aria-hidden="true">{{ simboloIcono(categoria.icono) }}</span>
+                {{ categoria.nombre }}
+              </span>
+              <button
+                type="button"
+                class="btn-desactivar"
+                [disabled]="desactivandoId === categoria.id"
+                (click)="desactivar(categoria)"
+              >
+                {{ desactivandoId === categoria.id ? 'Desactivando...' : 'Desactivar' }}
+              </button>
+            </li>
+          } @empty {
+            <li class="estado">No tienes categorías de ingreso.</li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+</main>

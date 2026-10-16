@@ -43,7 +43,8 @@ public class GastoService {
     public GastoResponse registrar(String emailUsuario, GastoRequest request) {
         Usuario usuario = buscarUsuario(emailUsuario);
 
-        Categoria categoria = categoriaRepository.findById(request.categoriaId())
+        // Solo categorías activas del propio usuario: no se puede imputar un gasto a una ajena
+        Categoria categoria = categoriaRepository.findByIdAndUsuarioIdAndActivaTrue(request.categoriaId(), usuario.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La categoría no existe"));
 
         Gasto gasto = new Gasto(

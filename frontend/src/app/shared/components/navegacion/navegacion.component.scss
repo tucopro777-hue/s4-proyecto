@@ -1,0 +1,84 @@
+:host {
+  display: block;
+}
+
+.navegacion {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 24px;
+  background: #ffffff;
+  box-shadow: 0 1px 0 var(--color-borde);
+}
+
+.marca {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-primario);
+}
+
+.enlaces {
+  display: flex;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+
+  a {
+    display: block;
+    padding: 8px 14px;
+    border-radius: var(--radio);
+    color: var(--color-texto-suave);
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+
+    &:hover {
+      background: var(--color-fondo);
+      color: var(--color-texto);
+    }
+
+    &.activo {
+      background: var(--color-primario);
+      color: #ffffff;
+    }
+  }
+}
+
+.salir {
+  padding: 8px 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: transparent;
+  color: var(--color-texto-suave);
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--color-error);
+    color: var(--color-error);
+  }
+}
+
+@media (max-width: 600px) {
+  .navegacion {
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .marca {
+    display: none;
+  }
+
+  .enlaces a {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+}

@@ -1,0 +1,127 @@
+<app-navegacion />
+
+<main class="pagina">
+  <header>
+    <span class="marca">Finanzas</span>
+    <h1>Movimientos</h1>
+    <p>Registra ingresos y gastos. Los saldos se actualizan al instante.</p>
+  </header>
+
+  @if (error) {
+    <div class="alerta alerta-error" role="alert">{{ error }}</div>
+  }
+  @if (exito) {
+    <div class="alerta alerta-exito" role="status">{{ exito }}</div>
+  }
+
+  <section class="saldos" aria-label="Saldos de billeteras">
+    @for (billetera of billeteras; track billetera.id) {
+      <article class="saldo">
+        <span class="saldo-nombre">{{ billetera.nombre }}</span>
+        <strong>{{ billetera.saldoActual | number: '1.2-2' }} <small>{{ billetera.divisa }}</small></strong>
+      </article>
+    } @empty {
+      <p class="estado">Aún no tienes billeteras. Registra una para empezar.</p>
+    }
+  </section>
+
+  <div class="grid">
+    <section class="tarjeta">
+      <h2>Nuevo movimiento</h2>
+
+      <form [formGroup]="form" (ngSubmit)="registrar()" novalidate>
+        <fieldset class="campo">
+          <legend>Tipo</legend>
+          <div class="segmentos">
+            @for (tipo of tipos; track tipo.valor) {
+              <label class="segmento" [class.activo]="form.controls.tipo.value === tipo.valor">
+                <input type="radio" formControlName="tipo" [value]="tipo.valor" />
+                {{ tipo.etiqueta }}
+              </label>
+            }
+          </div>
+        </fieldset>
+
+        <div class="campo" [class.invalido]="campoInvalido(form.controls.billeteraId)">
+          <label for="billetera">Billetera</label>
+          <select id="billetera" formControlName="billeteraId">
+            <option [ngValue]="null" disabled>Selecciona una billetera</option>
+            @for (billetera of billeteras; track billetera.id) {
+              <option [ngValue]="billetera.id">{{ billetera.nombre }} ({{ billetera.divisa }})</option>
+            }
+          </select>
+          @if (form.controls.tipo.value === 'GASTO' && saldoSeleccionado !== null) {
+            <small class="ayuda">Saldo disponible: {{ saldoSeleccionado | number: '1.2-2' }}</small>
+          }
+          @if (campoInvalido(form.controls.billeteraId)) {
+            <small>Elige una billetera.</small>
+          }
+        </div>
+
+        <div class="campo" [class.invalido]="campoInvalido(form.controls.categoriaId)">
+          <label for="categoria">Categoría</label>
+          <select id="categoria" formControlName="categoriaId">
+            <option [ngValue]="null" disabled>Selecciona una categoría</option>
+            @for (categoria of categoriasDelTipo; track categoria.id) {
+              <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+            }
+          </select>
+          @if (categoriasDelTipo.length === 0) {
+            <small class="ayuda">No tienes categorías de este tipo. Créalas en Categorías.</small>
+          }
+          @if (campoInvalido(form.controls.categoriaId)) {
+            <small>Elige una categoría.</small>
+          }
+        </div>
+
+        <div class="fila">
+          <div class="campo" [class.invalido]="campoInvalido(form.controls.monto)">
+            <label for="monto">Monto</label>
+            <input id="monto" type="number" min="0.01" step="0.01" formControlName="monto" />
+            @if (campoInvalido(form.controls.monto)) {
+              <small>El monto debe ser mayor que 0.</small>
+            }
+          </div>
+
+          <div class="campo">
+            <label for="fecha">Fecha</label>
+            <input id="fecha" type="date" formControlName="fecha" />
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="descripcion">Descripción (opcional)</label>
+          <input id="descripcion" type="text" maxlength="255" formControlName="descripcion" placeholder="Ej. Almuerzo" />
+        </div>
+
+        <button type="submit" class="btn" [disabled]="guardando">
+          {{ guardando ? 'Guardando...' : 'Registrar movimiento' }}
+        </button>
+      </form>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Historial reciente</h2>
+
+      @if (cargando) {
+        <p class="estado">Cargando movimientos...</p>
+      } @else {
+        <ul class="lista">
+          @for (t of recientes; track t.id) {
+            <li class="item">
+              <div class="item-info">
+                <span class="item-titulo">{{ t.descripcion || t.categoriaNombre }}</span>
+                <span class="item-meta">{{ t.fecha | date: 'dd/MM/yyyy' }} · {{ t.billeteraNombre }} · {{ t.categoriaNombre }}</span>
+              </div>
+              <span class="monto" [class.ingreso]="t.tipo === 'INGRESO'">
+                {{ t.tipo === 'INGRESO' ? '+' : '−' }}{{ t.monto | number: '1.2-2' }}
+              </span>
+            </li>
+          } @empty {
+            <li class="estado">Aún no hay movimientos registrados.</li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+</main>

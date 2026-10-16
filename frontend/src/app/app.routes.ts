@@ -19,5 +19,23 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
   },
+  {
+    path: 'billeteras',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/billeteras/billeteras.component').then((m) => m.BilleteraComponent),
+  },
+  {
+    path: 'categorias',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/categorias/categorias.component').then((m) => m.CategoriasComponent),
+  },
+  {
+    path: 'transacciones',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/transacciones/transacciones.component').then((m) => m.TransaccionesComponent),
+  },
   { path: '**', redirectTo: 'login' },
 ];

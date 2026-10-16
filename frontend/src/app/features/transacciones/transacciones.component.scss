@@ -1,0 +1,262 @@
+:host {
+  display: block;
+}
+
+.pagina {
+  min-height: calc(100vh - 64px);
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+header {
+  margin-bottom: 20px;
+
+  h1 {
+    margin: 4px 0 6px;
+    font-size: 1.6rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--color-texto-suave);
+  }
+}
+
+.marca {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-primario);
+}
+
+.alerta {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radio);
+  font-size: 0.9rem;
+}
+
+.alerta-error {
+  background: var(--color-error-fondo);
+  color: var(--color-error);
+}
+
+.alerta-exito {
+  background: var(--color-exito-fondo);
+  color: var(--color-exito);
+}
+
+.saldos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.saldo {
+  min-width: 180px;
+  padding: 14px 18px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  strong {
+    font-size: 1.2rem;
+  }
+
+  small {
+    color: var(--color-primario);
+    font-size: 0.75rem;
+  }
+}
+
+.saldo-nombre {
+  color: var(--color-texto-suave);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.tarjeta {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 26px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+
+  h2 {
+    margin: 0 0 16px;
+    font-size: 1.1rem;
+  }
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 0;
+  border: none;
+  min-width: 0;
+
+  > label,
+  > legend {
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0;
+    margin-bottom: 4px;
+  }
+
+  input,
+  select {
+    padding: 11px 12px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio);
+    font-size: 1rem;
+    background: #ffffff;
+    width: 100%;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primario);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+  }
+
+  small {
+    color: var(--color-error);
+    font-size: 0.8rem;
+  }
+
+  .ayuda {
+    color: var(--color-texto-suave);
+  }
+
+  &.invalido input,
+  &.invalido select {
+    border-color: var(--color-error);
+  }
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.segmentos {
+  display: flex;
+  gap: 8px;
+}
+
+.segmento {
+  flex: 1;
+  position: relative;
+  text-align: center;
+  padding: 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  font-weight: 600;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &.activo {
+    border-color: var(--color-primario);
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--color-primario);
+  }
+}
+
+.btn {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: var(--radio);
+  background: var(--color-primario);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--color-primario-oscuro);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-fondo);
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.item-titulo {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-meta {
+  color: var(--color-texto-suave);
+  font-size: 0.8rem;
+}
+
+.monto {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--color-error);
+
+  &.ingreso {
+    color: var(--color-exito);
+  }
+}
+
+.estado {
+  color: var(--color-texto-suave);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

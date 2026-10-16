@@ -1,0 +1,104 @@
+<app-navegacion />
+
+<main class="billeteras-page">
+  <header class="billeteras-header">
+    <div>
+      <span class="auth-marca">Finanzas</span>
+      <h1>Mis billeteras</h1>
+    </div>
+  </header>
+
+  @if (error) {
+    <div class="alert-error" role="alert">{{ error }}</div>
+  }
+  @if (exito) {
+    <div class="alert-exito" role="status">{{ exito }}</div>
+  }
+
+  <div class="billeteras-grid">
+    <section class="tarjeta">
+      <h2>Nueva billetera</h2>
+
+      <form [formGroup]="form" (ngSubmit)="registrar()" novalidate>
+        <div class="form-field" [class.invalido]="campoInvalido(form.controls.nombre)">
+          <label for="nombre">Nombre</label>
+          <input
+            id="nombre"
+            type="text"
+            formControlName="nombre"
+            maxlength="100"
+            placeholder="Ej. Cuenta de ahorros"
+          />
+          @if (campoInvalido(form.controls.nombre)) {
+            @if (form.controls.nombre.errors?.['required'] || form.controls.nombre.errors?.['vacio']) {
+              <small>El nombre es obligatorio.</small>
+            }
+          }
+        </div>
+
+        <div class="form-field" [class.invalido]="campoInvalido(form.controls.saldoInicial)">
+          <label for="saldoInicial">Saldo inicial</label>
+          <input
+            id="saldoInicial"
+            type="number"
+            min="0"
+            step="0.01"
+            formControlName="saldoInicial"
+          />
+          @if (campoInvalido(form.controls.saldoInicial)) {
+            <small>El saldo inicial debe ser mayor o igual a 0.</small>
+          }
+        </div>
+
+        <div class="form-field" [class.invalido]="campoInvalido(form.controls.divisa)">
+          <label for="divisa">Divisa</label>
+          <select id="divisa" formControlName="divisa">
+            @for (divisa of divisas; track divisa) {
+              <option [value]="divisa">{{ divisa }}</option>
+            }
+          </select>
+        </div>
+
+        <button type="submit" class="btn-primary" [disabled]="guardando">
+          @if (guardando) {
+            Guardando...
+          } @else {
+            Registrar billetera
+          }
+        </button>
+      </form>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Billeteras activas</h2>
+
+      @if (cargando) {
+        <p class="estado">Cargando billeteras...</p>
+      } @else {
+        <ul class="lista">
+          @for (billetera of billeteras; track billetera.id) {
+            <li class="item">
+              <div class="item-info">
+                <span class="item-nombre">{{ billetera.nombre }}</span>
+                <span class="item-saldo">
+                  {{ billetera.saldoActual | number: '1.2-2' }}
+                  <span class="item-divisa">{{ billetera.divisa }}</span>
+                </span>
+              </div>
+              <button
+                type="button"
+                class="btn-desactivar"
+                [disabled]="desactivandoId === billetera.id"
+                (click)="desactivar(billetera)"
+              >
+                {{ desactivandoId === billetera.id ? 'Desactivando...' : 'Desactivar' }}
+              </button>
+            </li>
+          } @empty {
+            <li class="estado">Aún no tienes billeteras. Registra la primera.</li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+</main>
