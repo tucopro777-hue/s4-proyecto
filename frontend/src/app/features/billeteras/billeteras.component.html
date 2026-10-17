@@ -80,7 +80,7 @@
             <li class="item">
               <div class="item-info">
                 <span class="item-nombre">{{ billetera.nombre }}</span>
-                <span class="item-saldo">
+                <span class="item-saldo" [class.positivo]="billetera.saldoActual > 0">
                   {{ billetera.saldoActual | number: '1.2-2' }}
                   <span class="item-divisa">{{ billetera.divisa }}</span>
                 </span>

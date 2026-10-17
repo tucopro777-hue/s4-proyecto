@@ -8,17 +8,28 @@
   </header>
 
   @if (error) {
-    <div class="alerta alerta-error" role="alert">{{ error }}</div>
+    <div class="alert-error" role="alert">{{ error }}</div>
   }
   @if (exito) {
-    <div class="alerta alerta-exito" role="status">{{ exito }}</div>
+    <div class="alert-exito" role="status">{{ exito }}</div>
+  }
+  @if (alerta) {
+    <div
+      [class.alert-excedido]="alerta.nivel === 'EXCEDIDO'"
+      [class.alert-aviso]="alerta.nivel === 'ADVERTENCIA'"
+      role="alert"
+    >
+      <strong>{{ alerta.nivel === 'EXCEDIDO' ? 'Presupuesto superado' : 'Presupuesto casi agotado' }}.</strong>
+      {{ alerta.mensaje }}
+      Consumido: {{ alerta.saldoConsumido | number: '1.2-2' }} de {{ alerta.montoLimite | number: '1.2-2' }}.
+    </div>
   }
 
   <section class="saldos" aria-label="Saldos de billeteras">
     @for (billetera of billeteras; track billetera.id) {
       <article class="saldo">
         <span class="saldo-nombre">{{ billetera.nombre }}</span>
-        <strong>{{ billetera.saldoActual | number: '1.2-2' }} <small>{{ billetera.divisa }}</small></strong>
+        <strong [class.positivo]="billetera.saldoActual > 0">{{ billetera.saldoActual | number: '1.2-2' }} <small>{{ billetera.divisa }}</small></strong>
       </article>
     } @empty {
       <p class="estado">Aún no tienes billeteras. Registra una para empezar.</p>
@@ -94,7 +105,7 @@
           <input id="descripcion" type="text" maxlength="255" formControlName="descripcion" placeholder="Ej. Almuerzo" />
         </div>
 
-        <button type="submit" class="btn" [disabled]="guardando">
+        <button type="submit" class="btn-primary" [disabled]="guardando">
           {{ guardando ? 'Guardando...' : 'Registrar movimiento' }}
         </button>
       </form>
@@ -113,9 +124,20 @@
                 <span class="item-titulo">{{ t.descripcion || t.categoriaNombre }}</span>
                 <span class="item-meta">{{ t.fecha | date: 'dd/MM/yyyy' }} · {{ t.billeteraNombre }} · {{ t.categoriaNombre }}</span>
               </div>
-              <span class="monto" [class.ingreso]="t.tipo === 'INGRESO'">
-                {{ t.tipo === 'INGRESO' ? '+' : '−' }}{{ t.monto | number: '1.2-2' }}
-              </span>
+              <div class="acciones-item">
+                <span class="monto" [class.ingreso]="t.tipo === 'INGRESO'">
+                  {{ t.tipo === 'INGRESO' ? '+' : '−' }}{{ t.monto | number: '1.2-2' }}
+                </span>
+                <button
+                  type="button"
+                  class="anular"
+                  [disabled]="anulandoId === t.id"
+                  (click)="anular(t)"
+                  [attr.aria-label]="'Anular movimiento de ' + t.monto"
+                >
+                  {{ anulandoId === t.id ? '...' : 'Anular' }}
+                </button>
+              </div>
             </li>
           } @empty {
             <li class="estado">Aún no hay movimientos registrados.</li>

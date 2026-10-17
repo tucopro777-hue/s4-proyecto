@@ -8,6 +8,7 @@ import { Billetera, BilleteraService } from '../billeteras/billetera.service';
 import { Categoria, CategoriaService } from '../categorias/categoria.service';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
 import {
+  AlertaPresupuesto,
   Transaccion,
   TipoTransaccion,
   TransaccionService,
@@ -42,6 +43,9 @@ export class TransaccionesComponent implements OnInit {
   guardando = false;
   error: string | null = null;
   exito: string | null = null;
+  /** Aviso de presupuesto del último gasto registrado; no bloquea la operación. */
+  alerta: AlertaPresupuesto | null = null;
+  anulandoId: number | null = null;
 
   readonly tipos: { valor: TipoTransaccion; etiqueta: string }[] = [
     { valor: 'GASTO', etiqueta: 'Gasto' },
@@ -94,6 +98,7 @@ export class TransaccionesComponent implements OnInit {
     this.guardando = true;
     this.error = null;
     this.exito = null;
+    this.alerta = null;
 
     this.transaccionService
       .registrar({
@@ -105,9 +110,10 @@ export class TransaccionesComponent implements OnInit {
         categoriaId: Number(valores.categoriaId),
       })
       .subscribe({
-        next: () => {
+        next: (creada) => {
           this.guardando = false;
           this.exito = 'Movimiento registrado correctamente.';
+          this.alerta = creada.alertaPresupuesto;
           // Se conserva la billetera para registrar varios movimientos seguidos
           this.form.reset({
             billeteraId: valores.billeteraId,
@@ -124,6 +130,33 @@ export class TransaccionesComponent implements OnInit {
           this.error = mensajeErrorTransaccion(err);
         },
       });
+  }
+
+  anular(transaccion: Transaccion): void {
+    const confirmado = window.confirm(
+      `¿Anular el movimiento de ${transaccion.monto} en "${transaccion.billeteraNombre}"? ` +
+        'El saldo de la billetera y el presupuesto se revertirán.',
+    );
+    if (!confirmado) {
+      return;
+    }
+
+    this.anulandoId = transaccion.id;
+    this.error = null;
+    this.exito = null;
+    this.alerta = null;
+
+    this.transaccionService.anular(transaccion.id).subscribe({
+      next: () => {
+        this.anulandoId = null;
+        this.exito = 'Movimiento anulado. Saldo y presupuesto actualizados.';
+        this.cargarTodo();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.anulandoId = null;
+        this.error = mensajeErrorTransaccion(err);
+      },
+    });
   }
 
   campoInvalido(control: AbstractControl): boolean {

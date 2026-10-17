@@ -49,14 +49,14 @@ export class CategoriasComponent implements OnInit {
   private readonly valoresPorDefecto = {
     nombre: '',
     tipo: 'GASTO' as TipoCategoria,
-    color: '#2563eb',
+    color: '#f0b90b',
     icono: 'cart',
   };
 
   readonly form = this.fb.nonNullable.group({
     nombre: ['', [Validators.required, Validators.maxLength(50), nombreNoVacio]],
     tipo: ['GASTO' as TipoCategoria, [Validators.required]],
-    color: ['#2563eb', [Validators.required, Validators.pattern(/^#[0-9a-fA-F]{6}$/)]],
+    color: ['#f0b90b', [Validators.required, Validators.pattern(/^#[0-9a-fA-F]{6}$/)]],
     icono: ['cart', [Validators.required]],
   });
 

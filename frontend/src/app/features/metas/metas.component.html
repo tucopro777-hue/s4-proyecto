@@ -1,0 +1,129 @@
+<app-navegacion />
+
+<main class="pagina">
+  <header>
+    <span class="marca">Finanzas</span>
+    <h1>Metas de ahorro</h1>
+    <p>Suma aportes a tus metas. Las metas solo cambian cuando tú aportas.</p>
+  </header>
+
+  @if (error) {
+    <div class="alert-error" role="alert">{{ error }}</div>
+  }
+  @if (exito) {
+    <div class="alert-exito" role="status">{{ exito }}</div>
+  }
+
+  <div class="grid">
+    <section class="tarjeta">
+      <h2>Nueva meta</h2>
+
+      <form [formGroup]="form" (ngSubmit)="crear()" novalidate>
+        <div class="campo" [class.invalido]="campoInvalido(form.controls.nombre)">
+          <label for="nombre">Nombre</label>
+          <input id="nombre" type="text" maxlength="100" formControlName="nombre" placeholder="Ej. Viaje a Lima" />
+          @if (campoInvalido(form.controls.nombre)) {
+            <small>El nombre es obligatorio.</small>
+          }
+        </div>
+
+        <div class="campo" [class.invalido]="campoInvalido(form.controls.montoObjetivo)">
+          <label for="objetivo">Monto objetivo</label>
+          <input id="objetivo" type="number" min="0.01" step="0.01" formControlName="montoObjetivo" />
+          @if (campoInvalido(form.controls.montoObjetivo)) {
+            <small>El objetivo debe ser mayor que 0.</small>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="fecha">Fecha límite (opcional)</label>
+          <input id="fecha" type="date" formControlName="fechaLimite" />
+        </div>
+
+        <button type="submit" class="btn-primary" [disabled]="guardando">
+          {{ guardando ? 'Guardando...' : 'Crear meta' }}
+        </button>
+      </form>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Mis metas</h2>
+
+      @if (cargando) {
+        <p class="estado">Cargando metas...</p>
+      } @else {
+        <ul class="lista">
+          @for (meta of metas; track meta.id) {
+            <li class="meta">
+              @if (editandoId === meta.id) {
+                <form [formGroup]="formEdicion" (ngSubmit)="guardarEdicion(meta)" novalidate>
+                  <div class="campo" [class.invalido]="campoEdicionInvalido(formEdicion.controls.nombre)">
+                    <label for="edit-nombre-{{ meta.id }}">Nombre</label>
+                    <input id="edit-nombre-{{ meta.id }}" type="text" maxlength="100" formControlName="nombre" />
+                  </div>
+                  <div class="fila">
+                    <div class="campo" [class.invalido]="campoEdicionInvalido(formEdicion.controls.montoObjetivo)">
+                      <label for="edit-objetivo-{{ meta.id }}">Objetivo</label>
+                      <input id="edit-objetivo-{{ meta.id }}" type="number" min="0.01" step="0.01" formControlName="montoObjetivo" />
+                    </div>
+                    <div class="campo">
+                      <label for="edit-fecha-{{ meta.id }}">Fecha límite</label>
+                      <input id="edit-fecha-{{ meta.id }}" type="date" formControlName="fechaLimite" />
+                    </div>
+                  </div>
+                  <div class="acciones">
+                    <button type="submit" class="btn-mini" [disabled]="guardandoEdicion">
+                      {{ guardandoEdicion ? 'Guardando...' : 'Guardar cambios' }}
+                    </button>
+                    <button type="button" class="btn-mini neutro" (click)="cancelarEdicion()">Cancelar</button>
+                  </div>
+                </form>
+              } @else {
+              <div class="cabecera">
+                <span class="nombre">{{ meta.nombre }}</span>
+                @if (meta.completada) {
+                  <span class="insignia">Completada</span>
+                }
+              </div>
+
+              <div class="cifras">
+                {{ meta.montoActual | number: '1.2-2' }} de {{ meta.montoObjetivo | number: '1.2-2' }}
+                · {{ meta.porcentaje | number: '1.0-1' }} %
+                @if (meta.fechaLimite) {
+                  · hasta {{ meta.fechaLimite | date: 'dd/MM/yyyy' }}
+                }
+              </div>
+
+              <div class="barra" role="progressbar" [attr.aria-valuenow]="meta.porcentaje" aria-valuemin="0" aria-valuemax="100">
+                <div class="relleno" [class.completa]="meta.completada" [style.width.%]="porcentajeVisible(meta)"></div>
+              </div>
+
+              <div class="acciones">
+                <input
+                  class="aporte"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="Monto"
+                  [value]="montosAporte[meta.id] ?? ''"
+                  (input)="montosAporte[meta.id] = +$any($event.target).value"
+                  [attr.aria-label]="'Aporte para ' + meta.nombre"
+                />
+                <button type="button" class="btn-mini neutro" (click)="iniciarEdicion(meta)">Editar</button>
+                <button type="button" class="btn-mini" [disabled]="aportandoId === meta.id" (click)="aportar(meta)">
+                  {{ aportandoId === meta.id ? '...' : 'Aportar' }}
+                </button>
+                <button type="button" class="btn-mini peligro" [disabled]="eliminandoId === meta.id" (click)="eliminar(meta)">
+                  {{ eliminandoId === meta.id ? '...' : 'Eliminar' }}
+                </button>
+              </div>
+              }
+            </li>
+          } @empty {
+            <li class="estado">Aún no tienes metas. Crea la primera.</li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+</main>

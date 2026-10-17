@@ -1,0 +1,127 @@
+<app-navegacion />
+
+<main class="pagina">
+  <header>
+    <span class="marca">Finanzas</span>
+    <h1>Presupuestos</h1>
+    <p>Límite mensual por categoría de gasto. Te avisamos al llegar al 80 % y al superarlo.</p>
+  </header>
+
+  @if (error) {
+    <div class="alert-error" role="alert">{{ error }}</div>
+  }
+  @if (exito) {
+    <div class="alert-exito" role="status">{{ exito }}</div>
+  }
+
+  <form class="periodo" [formGroup]="periodo" novalidate>
+    <label>
+      Mes
+      <select formControlName="mes">
+        @for (nombre of meses; track $index) {
+          <option [ngValue]="$index + 1">{{ nombre }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Año
+      <select formControlName="anio">
+        @for (anio of anios; track anio) {
+          <option [ngValue]="anio">{{ anio }}</option>
+        }
+      </select>
+    </label>
+    <div class="resumen">
+      Gastado <strong>{{ totalConsumido | number: '1.2-2' }}</strong>
+      de <strong>{{ totalLimite | number: '1.2-2' }}</strong>
+    </div>
+  </form>
+
+  <div class="grid">
+    <section class="tarjeta">
+      <h2>Nuevo presupuesto</h2>
+
+      @if (categoriasDisponibles.length === 0) {
+        <p class="estado">
+          Todas tus categorías de gasto ya tienen presupuesto este mes, o aún no tienes ninguna.
+        </p>
+      } @else {
+        <form [formGroup]="form" (ngSubmit)="crear()" novalidate>
+          <div class="campo" [class.invalido]="campoInvalido(form.controls.categoriaId)">
+            <label for="categoria">Categoría</label>
+            <select id="categoria" formControlName="categoriaId">
+              <option [ngValue]="null" disabled>Selecciona una categoría</option>
+              @for (categoria of categoriasDisponibles; track categoria.id) {
+                <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+              }
+            </select>
+            @if (campoInvalido(form.controls.categoriaId)) {
+              <small>Elige una categoría.</small>
+            }
+          </div>
+
+          <div class="campo" [class.invalido]="campoInvalido(form.controls.montoLimite)">
+            <label for="limite">Límite del mes</label>
+            <input id="limite" type="number" min="0.01" step="0.01" formControlName="montoLimite" />
+            @if (campoInvalido(form.controls.montoLimite)) {
+              <small>El límite debe ser mayor que 0.</small>
+            }
+          </div>
+
+          <button type="submit" class="btn-primary" [disabled]="guardando">
+            {{ guardando ? 'Guardando...' : 'Crear presupuesto' }}
+          </button>
+        </form>
+      }
+    </section>
+
+    <section class="tarjeta">
+      <h2>Presupuestos del mes</h2>
+
+      @if (cargando) {
+        <p class="estado">Cargando presupuestos...</p>
+      } @else {
+        <ul class="lista">
+          @for (p of presupuestos; track p.id) {
+            <li class="item">
+              <div class="cabecera">
+                <span class="nombre">{{ p.categoriaNombre }}</span>
+                <span class="cifras" [class.excedido]="p.nivel === 'EXCEDIDO'">
+                  {{ p.saldoConsumido | number: '1.2-2' }} / {{ p.montoLimite | number: '1.2-2' }}
+                </span>
+              </div>
+
+              <div class="barra" role="progressbar" [attr.aria-valuenow]="p.saldoConsumido" [attr.aria-valuemax]="p.montoLimite">
+                <div class="relleno" [ngClass]="'nivel-' + p.nivel.toLowerCase()" [style.width.%]="porcentaje(p)"></div>
+              </div>
+
+              <div class="acciones">
+                <span class="etiqueta" [ngClass]="'nivel-' + p.nivel.toLowerCase()">
+                  {{ p.nivel === 'EXCEDIDO' ? 'Superado' : p.nivel === 'ADVERTENCIA' ? 'Casi agotado' : 'En orden' }}
+                </span>
+
+                @if (editandoId === p.id) {
+                  <input class="edicion" type="number" min="0.01" step="0.01" [value]="montoEditado ?? ''" (input)="montoEditado = +$any($event.target).value" aria-label="Nuevo límite" />
+                  <button type="button" class="btn-mini" (click)="guardarEdicion(p)">Guardar</button>
+                  <button type="button" class="btn-mini neutro" (click)="cancelarEdicion()">Cancelar</button>
+                } @else {
+                  <button type="button" class="btn-mini neutro" (click)="iniciarEdicion(p)">Editar límite</button>
+                  <button
+                    type="button"
+                    class="btn-mini peligro"
+                    [disabled]="eliminandoId === p.id"
+                    (click)="eliminar(p)"
+                  >
+                    {{ eliminandoId === p.id ? '...' : 'Eliminar' }}
+                  </button>
+                }
+              </div>
+            </li>
+          } @empty {
+            <li class="estado">No hay presupuestos para este mes.</li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+</main>

@@ -63,6 +63,13 @@ public class Billetera {
                 : saldoActual.subtract(monto);
     }
 
+    /** Deshace un movimiento previo: un ingreso se resta y un gasto se devuelve al saldo. */
+    public void revertirMovimiento(TipoTransaccion tipo, BigDecimal monto) {
+        this.saldoActual = tipo == TipoTransaccion.INGRESO
+                ? saldoActual.subtract(monto)
+                : saldoActual.add(monto);
+    }
+
     public void desactivar() {
         this.activa = false;
     }

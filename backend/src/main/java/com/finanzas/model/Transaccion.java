@@ -38,6 +38,13 @@ public class Transaccion {
     @Column(nullable = false)
     private LocalDate fecha;
 
+    /**
+     * Anulación lógica: el movimiento se conserva para auditoría, su efecto en el saldo
+     * de la billetera y en el presupuesto ya fue revertido, y deja de contar en listados.
+     */
+    @Column(nullable = false)
+    private boolean anulada = false;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
@@ -65,6 +72,10 @@ public class Transaccion {
         this.categoria = categoria;
     }
 
+    public void anular() {
+        this.anulada = true;
+    }
+
     public Long getId() {
         return id;
     }
@@ -83,6 +94,14 @@ public class Transaccion {
 
     public LocalDate getFecha() {
         return fecha;
+    }
+
+    public boolean isAnulada() {
+        return anulada;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
     }
 
     public Billetera getBilletera() {

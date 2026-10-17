@@ -24,4 +24,9 @@ public interface BilleteraRepository extends JpaRepository<Billetera, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select b from Billetera b where b.id = :id and b.usuario.id = :usuarioId and b.activa = true")
     Optional<Billetera> bloquearActivaDeUsuario(@Param("id") Long id, @Param("usuarioId") Long usuarioId);
+
+    /** Para anular: aunque la billetera esté desactivada, su saldo debe poder corregirse. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select b from Billetera b where b.id = :id")
+    Optional<Billetera> bloquearPorId(@Param("id") Long id);
 }

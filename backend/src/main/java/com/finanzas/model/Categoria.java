@@ -39,7 +39,7 @@ public class Categoria {
     @Column(nullable = false, length = 30)
     private String icono;
 
-    /** Desactivación lógica: la categoría deja de listarse pero los gastos existentes la conservan. */
+    /** Desactivación lógica: la categoría deja de listarse pero los movimientos existentes la conservan. */
     @Column(nullable = false)
     private boolean activa = true;
 

@@ -37,5 +37,17 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/transacciones/transacciones.component').then((m) => m.TransaccionesComponent),
   },
+  {
+    path: 'presupuestos',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/presupuestos/presupuestos.component').then((m) => m.PresupuestosComponent),
+  },
+  {
+    path: 'metas',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/metas/metas.component').then((m) => m.MetasComponent),
+  },
   { path: '**', redirectTo: 'login' },
 ];

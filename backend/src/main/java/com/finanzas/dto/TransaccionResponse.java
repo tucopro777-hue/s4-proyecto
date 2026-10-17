@@ -14,6 +14,8 @@ public record TransaccionResponse(
         Long billeteraId,
         String billeteraNombre,
         Long categoriaId,
-        String categoriaNombre
+        String categoriaNombre,
+        /** Solo se rellena al registrar un GASTO que afecta a un presupuesto; si no, es null. */
+        AlertaPresupuesto alertaPresupuesto
 ) {
 }

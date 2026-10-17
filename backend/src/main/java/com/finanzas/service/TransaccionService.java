@@ -1,11 +1,12 @@
 package com.finanzas.service;
 
+import com.finanzas.dto.AlertaPresupuesto;
 import com.finanzas.dto.TransaccionRequest;
 import com.finanzas.dto.TransaccionResponse;
 import com.finanzas.model.Billetera;
 import com.finanzas.model.Categoria;
-import com.finanzas.model.Transaccion;
 import com.finanzas.model.TipoTransaccion;
+import com.finanzas.model.Transaccion;
 import com.finanzas.model.Usuario;
 import com.finanzas.repository.BilleteraRepository;
 import com.finanzas.repository.CategoriaRepository;
@@ -18,6 +19,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+/**
+ * Movimientos de ingreso y gasto. Cada alta, baja lógica (anulación) o cambio de saldo ocurre
+ * dentro de una única transacción de BD junto con la billetera y el presupuesto afectados.
+ */
 @Service
 public class TransaccionService {
 
@@ -25,29 +30,32 @@ public class TransaccionService {
     private final BilleteraRepository billeteraRepository;
     private final CategoriaRepository categoriaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PresupuestoService presupuestoService;
 
     public TransaccionService(TransaccionRepository transaccionRepository,
                               BilleteraRepository billeteraRepository,
                               CategoriaRepository categoriaRepository,
-                              UsuarioRepository usuarioRepository) {
+                              UsuarioRepository usuarioRepository,
+                              PresupuestoService presupuestoService) {
         this.transaccionRepository = transaccionRepository;
         this.billeteraRepository = billeteraRepository;
         this.categoriaRepository = categoriaRepository;
         this.usuarioRepository = usuarioRepository;
+        this.presupuestoService = presupuestoService;
     }
 
     @Transactional(readOnly = true)
     public List<TransaccionResponse> listarDeUsuario(String emailUsuario) {
         Usuario usuario = buscarUsuario(emailUsuario);
 
-        return transaccionRepository.findByUsuarioIdOrderByFechaDescIdDesc(usuario.getId()).stream()
-                .map(this::toResponse)
+        return transaccionRepository.findByUsuarioIdAndAnuladaFalseOrderByFechaDescIdDesc(usuario.getId()).stream()
+                .map(transaccion -> toResponse(transaccion, null))
                 .toList();
     }
 
     /**
-     * Registra el movimiento y actualiza el saldo de la billetera en la misma transacción de BD.
-     * La billetera se bloquea con FOR UPDATE, así que la validación de saldo y la resta son atómicas.
+     * Registra el movimiento, actualiza el saldo de la billetera y, si es un gasto, su presupuesto.
+     * Un gasto que supera el presupuesto se registra igualmente y se devuelve una alerta.
      */
     @Transactional
     public TransaccionResponse registrar(String emailUsuario, TransaccionRequest request) {
@@ -85,7 +93,48 @@ public class TransaccionService {
         );
         transaccionRepository.save(transaccion);
 
-        return toResponse(transaccion);
+        AlertaPresupuesto alerta = null;
+        if (request.tipo() == TipoTransaccion.GASTO) {
+            alerta = presupuestoService.registrarGasto(usuario, categoria, request.monto(), request.fecha());
+        }
+
+        return toResponse(transaccion, alerta);
+    }
+
+    /**
+     * Anula un movimiento: revierte su efecto en la billetera y, si es gasto, en el presupuesto.
+     * La fila se conserva marcada como anulada para auditoría.
+     */
+    @Transactional
+    public void anular(String emailUsuario, Long transaccionId) {
+        Usuario usuario = buscarUsuario(emailUsuario);
+
+        // Primero se bloquea el movimiento; luego billetera y presupuesto, siempre en ese orden
+        Transaccion transaccion = transaccionRepository.bloquearDeUsuario(transaccionId, usuario.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El movimiento no existe"));
+
+        if (transaccion.isAnulada()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El movimiento ya está anulado");
+        }
+
+        Billetera billetera = billeteraRepository.bloquearPorId(transaccion.getBilletera().getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La billetera del movimiento no existe"));
+
+        // Anular un ingreso le quita dinero: no puede dejar la billetera en negativo
+        if (transaccion.getTipo() == TipoTransaccion.INGRESO
+                && billetera.getSaldoActual().compareTo(transaccion.getMonto()) < 0) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "El saldo actual de la billetera no permite anular este ingreso");
+        }
+
+        billetera.revertirMovimiento(transaccion.getTipo(), transaccion.getMonto());
+
+        if (transaccion.getTipo() == TipoTransaccion.GASTO) {
+            presupuestoService.revertirGasto(usuario, transaccion.getCategoria(),
+                    transaccion.getMonto(), transaccion.getFecha());
+        }
+
+        transaccion.anular();
     }
 
     private Usuario buscarUsuario(String email) {
@@ -94,7 +143,7 @@ public class TransaccionService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
     }
 
-    private TransaccionResponse toResponse(Transaccion transaccion) {
+    private TransaccionResponse toResponse(Transaccion transaccion, AlertaPresupuesto alerta) {
         return new TransaccionResponse(
                 transaccion.getId(),
                 transaccion.getMonto(),
@@ -104,7 +153,8 @@ public class TransaccionService {
                 transaccion.getBilletera().getId(),
                 transaccion.getBilletera().getNombre(),
                 transaccion.getCategoria().getId(),
-                transaccion.getCategoria().getNombre()
+                transaccion.getCategoria().getNombre(),
+                alerta
         );
     }
 }

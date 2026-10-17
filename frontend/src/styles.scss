@@ -1,16 +1,33 @@
-// Tokens de color y estilos globales compartidos por todas las pantallas
+// Tema oscuro tipo fintech profesional. Los componentes consumen estos tokens;
+// no usar colores fijos en las pantallas.
 
 :root {
-  --color-primario: #2563eb;
-  --color-primario-oscuro: #1d4ed8;
-  --color-texto: #0f172a;
-  --color-texto-suave: #64748b;
-  --color-borde: #cbd5e1;
-  --color-fondo: #f1f5f9;
-  --color-error: #dc2626;
-  --color-error-fondo: #fef2f2;
-  --color-exito: #15803d;
-  --color-exito-fondo: #f0fdf4;
+  color-scheme: dark;
+
+  // Fondos y superficies
+  --color-fondo: #0b0e11;
+  --color-superficie: #1e2329;
+  --color-superficie-elevada: #252b33;
+  --color-borde: #2b313a;
+
+  // Texto
+  --color-texto: #f0f0f0;
+  --color-texto-suave: #848e9c;
+  --color-texto-invertido: #0b0e11;
+
+  // Acento principal (botones destacados, marca, foco)
+  --color-primario: #f0b90b;
+  --color-primario-oscuro: #d9a60a;
+  --color-primario-suave: rgba(240, 185, 11, 0.12);
+  --color-foco: rgba(240, 185, 11, 0.35);
+
+  // Semántica financiera: verde = ingreso / saldo positivo, coral = gasto / egreso
+  --color-exito: #0ecb81;
+  --color-exito-fondo: rgba(14, 203, 129, 0.12);
+  --color-error: #f6465d;
+  --color-error-fondo: rgba(246, 70, 93, 0.12);
+
+  --color-sombra: rgba(0, 0, 0, 0.45);
   --radio: 10px;
 }
 
@@ -35,16 +52,19 @@ body {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #38bdf8 100%);
+  background:
+    radial-gradient(circle at 15% 10%, rgba(240, 185, 11, 0.08), transparent 40%),
+    var(--color-fondo);
 }
 
 .auth-card {
   width: 100%;
   max-width: 420px;
-  background: #ffffff;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
   border-radius: 16px;
   padding: 40px 36px;
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+  box-shadow: 0 20px 50px var(--color-sombra);
 }
 
 .auth-header {
@@ -82,19 +102,31 @@ body {
   label {
     font-size: 0.875rem;
     font-weight: 600;
+    color: var(--color-texto);
   }
 
   input {
     padding: 12px 14px;
     border: 1px solid var(--color-borde);
     border-radius: var(--radio);
+    background: var(--color-fondo);
+    color: var(--color-texto);
     font-size: 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+
+    &::placeholder {
+      color: var(--color-texto-suave);
+      opacity: 0.7;
+    }
+
+    &:hover {
+      border-color: var(--color-texto-suave);
+    }
 
     &:focus {
       outline: none;
       border-color: var(--color-primario);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+      box-shadow: 0 0 0 3px var(--color-foco);
     }
   }
 
@@ -114,9 +146,9 @@ body {
   border: none;
   border-radius: var(--radio);
   background: var(--color-primario);
-  color: #ffffff;
+  color: var(--color-texto-invertido);
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.2s, transform 0.05s;
 
@@ -129,7 +161,7 @@ body {
   }
 
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 }
@@ -137,6 +169,7 @@ body {
 .alert-error {
   margin-bottom: 18px;
   padding: 12px 14px;
+  border: 1px solid rgba(246, 70, 93, 0.3);
   border-radius: var(--radio);
   background: var(--color-error-fondo);
   color: var(--color-error);
@@ -146,6 +179,7 @@ body {
 .alert-exito {
   margin-bottom: 18px;
   padding: 12px 14px;
+  border: 1px solid rgba(14, 203, 129, 0.3);
   border-radius: var(--radio);
   background: var(--color-exito-fondo);
   color: var(--color-exito);
@@ -167,6 +201,109 @@ body {
       text-decoration: underline;
     }
   }
+}
+
+// Bloques compartidos por las pantallas autenticadas
+.pagina {
+  min-height: calc(100vh - 64px);
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+.marca {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-primario);
+}
+
+.tarjeta {
+  background: var(--color-superficie);
+  border-radius: 16px;
+  padding: 26px;
+  box-shadow: 0 10px 30px var(--color-sombra);
+
+  h2 {
+    margin: 0 0 16px;
+    font-size: 1.1rem;
+  }
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 0;
+  border: none;
+  min-width: 0;
+
+  > label,
+  > legend {
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0;
+    margin-bottom: 4px;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio);
+    background: var(--color-fondo);
+    color: var(--color-texto);
+    font-size: 1rem;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primario);
+      box-shadow: 0 0 0 3px var(--color-foco);
+    }
+  }
+
+  small {
+    color: var(--color-error);
+    font-size: 0.8rem;
+  }
+
+  .ayuda {
+    color: var(--color-texto-suave);
+  }
+
+  &.invalido input,
+  &.invalido select {
+    border-color: var(--color-error);
+  }
+}
+
+.estado {
+  color: var(--color-texto-suave);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.alert-aviso {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(240, 185, 11, 0.4);
+  border-radius: var(--radio);
+  background: rgba(240, 185, 11, 0.12);
+  color: var(--color-primario);
+  font-size: 0.9rem;
+}
+
+.alert-excedido {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(246, 70, 93, 0.4);
+  border-radius: var(--radio);
+  background: var(--color-error-fondo);
+  color: var(--color-error);
+  font-size: 0.9rem;
 }
 
 @media (max-width: 480px) {
