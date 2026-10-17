@@ -17,6 +17,7 @@ export class LoginComponent {
   private readonly router = inject(Router);
 
   cargando = false;
+  verPassword = false;
   error: string | null = null;
   exito: string | null = null;
 

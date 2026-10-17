@@ -286,6 +286,50 @@ body {
   margin: 0;
 }
 
+// Campo de contraseña con botón para mostrar u ocultar el texto
+.input-password {
+  position: relative;
+
+  input {
+    width: 100%;
+    padding-right: 44px;
+  }
+}
+
+.boton-ojo {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-texto-suave);
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-primario);
+    outline: none;
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
 .alert-aviso {
   margin-bottom: 18px;
   padding: 12px 14px;
