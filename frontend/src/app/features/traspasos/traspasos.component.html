@@ -1,0 +1,109 @@
+<app-navegacion />
+
+<main class="pagina">
+  <header>
+    <span class="marca">Finanzas</span>
+    <h1>Traspasos</h1>
+    <p>Mueve dinero entre tus billeteras. Es atómico: o se aplica completo, o no se aplica nada.</p>
+  </header>
+
+  @if (error) {
+    <div class="alert-error" role="alert">{{ error }}</div>
+  }
+  @if (exito) {
+    <div class="alert-exito" role="status">{{ exito }}</div>
+  }
+
+  <div class="grid">
+    <section class="tarjeta">
+      <h2>Nuevo traspaso</h2>
+
+      @if (!cargando && billeteras.length < 2) {
+        <p class="estado">Necesitas al menos dos billeteras activas para hacer un traspaso.</p>
+      } @else {
+        <form [formGroup]="form" (ngSubmit)="transferir()" novalidate>
+          <div class="campo" [class.invalido]="campoInvalido(form.controls.billeteraOrigenId)">
+            <label for="origen">Desde</label>
+            <select id="origen" formControlName="billeteraOrigenId">
+              <option [ngValue]="null" disabled>Selecciona la billetera de origen</option>
+              @for (b of billeteras; track b.id) {
+                <option [ngValue]="b.id">{{ b.nombre }} ({{ b.divisa }})</option>
+              }
+            </select>
+            @if (origen) {
+              <small class="ayuda">Saldo disponible: {{ origen.saldoActual | number: '1.2-2' }} {{ origen.divisa }}</small>
+            }
+            @if (campoInvalido(form.controls.billeteraOrigenId)) {
+              <small>Elige la billetera de origen.</small>
+            }
+          </div>
+
+          <div class="campo" [class.invalido]="campoInvalido(form.controls.billeteraDestinoId)">
+            <label for="destino">Hacia</label>
+            <select id="destino" formControlName="billeteraDestinoId">
+              <option [ngValue]="null" disabled>Selecciona la billetera de destino</option>
+              @for (b of destinosPosibles; track b.id) {
+                <option [ngValue]="b.id">{{ b.nombre }} ({{ b.divisa }})</option>
+              }
+            </select>
+            @if (origen && destinosPosibles.length === 0) {
+              <small class="ayuda">No tienes otra billetera en {{ origen.divisa }}.</small>
+            }
+            @if (campoInvalido(form.controls.billeteraDestinoId)) {
+              <small>Elige la billetera de destino.</small>
+            }
+          </div>
+
+          <div class="fila">
+            <div class="campo" [class.invalido]="campoInvalido(form.controls.monto) || excedeSaldo">
+              <label for="monto">Monto</label>
+              <input id="monto" type="number" min="0.01" step="0.01" formControlName="monto" />
+              @if (campoInvalido(form.controls.monto)) {
+                <small>El monto debe ser mayor que 0.</small>
+              }
+              @if (excedeSaldo) {
+                <small>Supera el saldo disponible de la billetera de origen.</small>
+              }
+            </div>
+
+            <div class="campo">
+              <label for="fecha">Fecha</label>
+              <input id="fecha" type="date" formControlName="fecha" />
+            </div>
+          </div>
+
+          <div class="campo">
+            <label for="descripcion">Descripción (opcional)</label>
+            <input id="descripcion" type="text" maxlength="255" formControlName="descripcion" placeholder="Ej. Ahorro del mes" />
+          </div>
+
+          <button type="submit" class="btn-primary" [disabled]="!puedeEnviar">
+            {{ guardando ? 'Transfiriendo...' : 'Hacer traspaso' }}
+          </button>
+        </form>
+      }
+    </section>
+
+    <section class="tarjeta">
+      <h2>Traspasos recientes</h2>
+
+      @if (cargando) {
+        <p class="estado">Cargando traspasos...</p>
+      } @else {
+        <ul class="lista">
+          @for (t of traspasos; track t.id) {
+            <li class="item">
+              <div class="info">
+                <span class="titulo">{{ t.billeteraOrigenNombre }} → {{ t.billeteraDestinoNombre }}</span>
+                <span class="meta">{{ t.fecha | date: 'dd/MM/yyyy' }}@if (t.descripcion) { · {{ t.descripcion }} }</span>
+              </div>
+              <span class="monto">{{ t.monto | number: '1.2-2' }}</span>
+            </li>
+          } @empty {
+            <li class="estado">Aún no has hecho traspasos.</li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+</main>

@@ -49,5 +49,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/metas/metas.component').then((m) => m.MetasComponent),
   },
+  {
+    path: 'traspasos',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/traspasos/traspasos.component').then((m) => m.TraspasosComponent),
+  },
   { path: '**', redirectTo: 'login' },
 ];
