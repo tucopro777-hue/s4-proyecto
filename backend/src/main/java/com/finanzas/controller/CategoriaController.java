@@ -1,51 +1,51 @@
-package com.finanzas.controller;
+package com.finanzas.controller; // Controladores REST
 
-import com.finanzas.dto.CategoriaRequest;
-import com.finanzas.dto.CategoriaResponse;
-import com.finanzas.model.TipoCategoria;
-import com.finanzas.service.CategoriaService;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import com.finanzas.dto.CategoriaRequest; // Datos para crear categoría
+import com.finanzas.dto.CategoriaResponse; // Datos de categoría devueltos
+import com.finanzas.model.TipoCategoria; // Enum de tipo de categoría
+import com.finanzas.service.CategoriaService; // Lógica de categorías
+import jakarta.validation.Valid; // Activa validaciones del DTO
+import org.springframework.http.HttpStatus; // Códigos HTTP
+import org.springframework.http.ResponseEntity; // Respuesta HTTP completa
+import org.springframework.security.core.Authentication; // Usuario autenticado
+import org.springframework.web.bind.annotation.DeleteMapping; // Mapea peticiones DELETE
+import org.springframework.web.bind.annotation.GetMapping; // Mapea peticiones GET
+import org.springframework.web.bind.annotation.PathVariable; // Lee un valor de la URL
+import org.springframework.web.bind.annotation.PostMapping; // Mapea peticiones POST
+import org.springframework.web.bind.annotation.RequestBody; // Lee el cuerpo JSON
+import org.springframework.web.bind.annotation.RequestMapping; // Prefijo de rutas
+import org.springframework.web.bind.annotation.RequestParam; // Lee un parámetro de la URL
+import org.springframework.web.bind.annotation.RestController; // Controlador que devuelve JSON
 
-import java.util.List;
+import java.util.List; // Lista de respuestas
 
-@RestController
-@RequestMapping("/api/categorias")
-public class CategoriaController {
+@RestController // Controlador REST
+@RequestMapping("/api/categorias") // Rutas bajo /api/categorias
+public class CategoriaController { // Endpoints de categorías
 
-    private final CategoriaService categoriaService;
+    private final CategoriaService categoriaService; // Servicio inyectado
 
-    public CategoriaController(CategoriaService categoriaService) {
-        this.categoriaService = categoriaService;
+    public CategoriaController(CategoriaService categoriaService) { // Constructor con inyección
+        this.categoriaService = categoriaService; // Guarda el servicio
     }
 
-    @GetMapping
-    public ResponseEntity<List<CategoriaResponse>> listarDelUsuario(
-            Authentication autenticacion,
-            @RequestParam(required = false) TipoCategoria tipo) {
-        return ResponseEntity.ok(categoriaService.listarDeUsuario(autenticacion.getName(), tipo));
+    @GetMapping // GET /api/categorias
+    public ResponseEntity<List<CategoriaResponse>> listarDelUsuario( // Lista categorías del usuario
+            Authentication autenticacion, // Usuario actual
+            @RequestParam(required = false) TipoCategoria tipo) { // Filtro opcional por tipo
+        return ResponseEntity.ok(categoriaService.listarDeUsuario(autenticacion.getName(), tipo)); // Devuelve la lista (200)
     }
 
-    @PostMapping
-    public ResponseEntity<CategoriaResponse> crear(Authentication autenticacion,
-                                                   @Valid @RequestBody CategoriaRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(categoriaService.crear(autenticacion.getName(), request));
+    @PostMapping // POST /api/categorias
+    public ResponseEntity<CategoriaResponse> crear(Authentication autenticacion, // Usuario actual
+                                                   @Valid @RequestBody CategoriaRequest request) { // Datos validados
+        return ResponseEntity.status(HttpStatus.CREATED) // Responde 201
+                .body(categoriaService.crear(autenticacion.getName(), request)); // Crea la categoría del usuario
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> desactivar(Authentication autenticacion, @PathVariable Long id) {
-        categoriaService.desactivar(autenticacion.getName(), id);
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/{id}") // DELETE /api/categorias/{id}
+    public ResponseEntity<Void> desactivar(Authentication autenticacion, @PathVariable Long id) { // Id desde la URL
+        categoriaService.desactivar(autenticacion.getName(), id); // Desactiva la categoría del usuario
+        return ResponseEntity.noContent().build(); // Responde 204 sin cuerpo
     }
 }

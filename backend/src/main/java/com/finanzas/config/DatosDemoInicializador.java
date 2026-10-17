@@ -34,11 +34,10 @@ import java.time.LocalDate;
  * Crea un usuario de demostración con billeteras, categorías y movimientos de ejemplo.
  *
  * Se ejecuta solo si app.demo.enabled=true y si el usuario aún no existe, así que es seguro
- * arrancar la aplicación varias veces. Usa los propios servicios para que saldos, presupuestos
- * y metas queden coherentes con las reglas de negocio. Todo corre en una sola transacción:
+ * arrancar la aplicación varias veces.  Todo corre en una sola transacción:
  * si algo falla, no queda un usuario a medio crear.
  *
- * Credenciales de demo: demo@finanzas.test / Demo1234. No usar en producción.
+ * Credenciales de demo: demo@finanzas.test / Demo1234.
  */
 @Component
 @ConditionalOnProperty(name = "app.demo.enabled", havingValue = "true")

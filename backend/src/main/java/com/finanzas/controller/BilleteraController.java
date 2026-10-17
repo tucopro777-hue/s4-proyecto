@@ -1,47 +1,47 @@
-package com.finanzas.controller;
+package com.finanzas.controller; // Controladores REST
 
-import com.finanzas.dto.BilleteraRequest;
-import com.finanzas.dto.BilleteraResponse;
-import com.finanzas.service.BilleteraService;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.finanzas.dto.BilleteraRequest; // Datos para crear billetera
+import com.finanzas.dto.BilleteraResponse; // Datos de billetera devueltos
+import com.finanzas.service.BilleteraService; // Lógica de billeteras
+import jakarta.validation.Valid; // Activa validaciones del DTO
+import org.springframework.http.HttpStatus; // Códigos HTTP
+import org.springframework.http.ResponseEntity; // Respuesta HTTP completa
+import org.springframework.security.core.Authentication; // Usuario autenticado
+import org.springframework.web.bind.annotation.DeleteMapping; // Mapea peticiones DELETE
+import org.springframework.web.bind.annotation.GetMapping; // Mapea peticiones GET
+import org.springframework.web.bind.annotation.PathVariable; // Lee un valor de la URL
+import org.springframework.web.bind.annotation.PostMapping; // Mapea peticiones POST
+import org.springframework.web.bind.annotation.RequestBody; // Lee el cuerpo JSON
+import org.springframework.web.bind.annotation.RequestMapping; // Prefijo de rutas
+import org.springframework.web.bind.annotation.RestController; // Controlador que devuelve JSON
 
-import java.util.List;
+import java.util.List; // Lista de respuestas
 
-@RestController
-@RequestMapping("/api/billeteras")
-public class BilleteraController {
+@RestController // Controlador REST
+@RequestMapping("/api/billeteras") // Rutas bajo /api/billeteras
+public class BilleteraController { // Endpoints de billeteras
 
-    private final BilleteraService billeteraService;
+    private final BilleteraService billeteraService; // Servicio inyectado
 
-    public BilleteraController(BilleteraService billeteraService) {
-        this.billeteraService = billeteraService;
+    public BilleteraController(BilleteraService billeteraService) { // Constructor con inyección
+        this.billeteraService = billeteraService; // Guarda el servicio
     }
 
-    @GetMapping
-    public ResponseEntity<List<BilleteraResponse>> listarDelUsuario(Authentication autenticacion) {
-        return ResponseEntity.ok(billeteraService.listarDeUsuario(autenticacion.getName()));
+    @GetMapping // GET /api/billeteras
+    public ResponseEntity<List<BilleteraResponse>> listarDelUsuario(Authentication autenticacion) { // Usuario actual
+        return ResponseEntity.ok(billeteraService.listarDeUsuario(autenticacion.getName())); // Devuelve sus billeteras (200)
     }
 
-    @PostMapping
-    public ResponseEntity<BilleteraResponse> crear(Authentication autenticacion,
-                                                   @Valid @RequestBody BilleteraRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(billeteraService.crear(autenticacion.getName(), request));
+    @PostMapping // POST /api/billeteras
+    public ResponseEntity<BilleteraResponse> crear(Authentication autenticacion, // Usuario actual
+                                                   @Valid @RequestBody BilleteraRequest request) { // Datos validados
+        return ResponseEntity.status(HttpStatus.CREATED) // Responde 201
+                .body(billeteraService.crear(autenticacion.getName(), request)); // Crea la billetera del usuario
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> desactivar(Authentication autenticacion, @PathVariable Long id) {
-        billeteraService.desactivar(autenticacion.getName(), id);
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/{id}") // DELETE /api/billeteras/{id}
+    public ResponseEntity<Void> desactivar(Authentication autenticacion, @PathVariable Long id) { // Id desde la URL
+        billeteraService.desactivar(autenticacion.getName(), id); // Desactiva la billetera del usuario
+        return ResponseEntity.noContent().build(); // Responde 204 sin cuerpo
     }
 }
