@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -31,17 +32,20 @@ public class TransaccionService {
     private final CategoriaRepository categoriaRepository;
     private final UsuarioRepository usuarioRepository;
     private final PresupuestoService presupuestoService;
+    private final MetaAhorroService metaAhorroService;
 
     public TransaccionService(TransaccionRepository transaccionRepository,
                               BilleteraRepository billeteraRepository,
                               CategoriaRepository categoriaRepository,
                               UsuarioRepository usuarioRepository,
-                              PresupuestoService presupuestoService) {
+                              PresupuestoService presupuestoService,
+                              MetaAhorroService metaAhorroService) {
         this.transaccionRepository = transaccionRepository;
         this.billeteraRepository = billeteraRepository;
         this.categoriaRepository = categoriaRepository;
         this.usuarioRepository = usuarioRepository;
         this.presupuestoService = presupuestoService;
+        this.metaAhorroService = metaAhorroService;
     }
 
     @Transactional(readOnly = true)
@@ -96,6 +100,9 @@ public class TransaccionService {
         AlertaPresupuesto alerta = null;
         if (request.tipo() == TipoTransaccion.GASTO) {
             alerta = presupuestoService.registrarGasto(usuario, categoria, request.monto(), request.fecha());
+        } else {
+            // Los ingresos pueden derivar un porcentaje automático a las metas de ahorro
+            metaAhorroService.aplicarAportesAutomaticos(usuario, billetera, transaccion);
         }
 
         return toResponse(transaccion, alerta);
@@ -120,11 +127,15 @@ public class TransaccionService {
         Billetera billetera = billeteraRepository.bloquearPorId(transaccion.getBilletera().getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La billetera del movimiento no existe"));
 
-        // Anular un ingreso le quita dinero: no puede dejar la billetera en negativo
-        if (transaccion.getTipo() == TipoTransaccion.INGRESO
-                && billetera.getSaldoActual().compareTo(transaccion.getMonto()) < 0) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                    "El saldo actual de la billetera no permite anular este ingreso");
+        // Anular un ingreso le quita dinero, pero antes vuelven los aportes automáticos que generó
+        BigDecimal aportesAutomaticos = BigDecimal.ZERO;
+        if (transaccion.getTipo() == TipoTransaccion.INGRESO) {
+            aportesAutomaticos = metaAhorroService.sumaAportesAutomaticos(transaccion.getId());
+            if (billetera.getSaldoActual().add(aportesAutomaticos).compareTo(transaccion.getMonto()) < 0) {
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                        "El saldo actual de la billetera no permite anular este ingreso");
+            }
+            metaAhorroService.devolverAportesAutomaticos(transaccion, billetera);
         }
 
         billetera.revertirMovimiento(transaccion.getTipo(), transaccion.getMonto());

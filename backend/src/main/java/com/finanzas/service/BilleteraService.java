@@ -7,6 +7,7 @@ import com.finanzas.model.Usuario;
 import com.finanzas.repository.BilleteraRepository;
 import com.finanzas.repository.UsuarioRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,11 +19,14 @@ public class BilleteraService {
 
     private final BilleteraRepository billeteraRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public BilleteraService(BilleteraRepository billeteraRepository,
-                            UsuarioRepository usuarioRepository) {
+                            UsuarioRepository usuarioRepository,
+                            PasswordEncoder passwordEncoder) {
         this.billeteraRepository = billeteraRepository;
         this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional(readOnly = true)
@@ -37,9 +41,14 @@ public class BilleteraService {
     @Transactional
     public BilleteraResponse crear(String emailUsuario, BilleteraRequest request) {
         Usuario usuario = buscarUsuario(emailUsuario);
+        String nombre = request.nombre().trim();
+
+        if (billeteraRepository.existsByUsuarioIdAndActivaTrueAndNombreIgnoreCase(usuario.getId(), nombre)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya tienes una billetera activa con ese nombre");
+        }
 
         Billetera billetera = new Billetera(
-                request.nombre().trim(),
+                nombre,
                 request.saldoInicial(),
                 request.divisa(),
                 usuario
@@ -49,10 +58,17 @@ public class BilleteraService {
         return toResponse(billetera);
     }
 
-    /** Desactivación lógica: la fila se conserva para no romper el historial de movimientos. */
+    /**
+     * Desactivación lógica: la fila se conserva para no romper el historial de movimientos.
+     * Exige la contraseña del usuario para confirmar la acción.
+     */
     @Transactional
-    public void desactivar(String emailUsuario, Long billeteraId) {
+    public void desactivar(String emailUsuario, Long billeteraId, String password) {
         Usuario usuario = buscarUsuario(emailUsuario);
+
+        if (!passwordEncoder.matches(password, usuario.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Contraseña incorrecta");
+        }
 
         Billetera billetera = billeteraRepository.findByIdAndUsuarioId(billeteraId, usuario.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La billetera no existe"));

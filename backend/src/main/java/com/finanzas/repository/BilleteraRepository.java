@@ -14,6 +14,9 @@ public interface BilleteraRepository extends JpaRepository<Billetera, Long> {
 
     List<Billetera> findByUsuarioIdAndActivaTrueOrderByNombreAsc(Long usuarioId);
 
+    /** Evita dos billeteras activas con el mismo nombre (sin distinguir mayúsculas). */
+    boolean existsByUsuarioIdAndActivaTrueAndNombreIgnoreCase(Long usuarioId, String nombre);
+
     /** Filtra por dueño para que un usuario nunca pueda tocar billeteras ajenas. */
     Optional<Billetera> findByIdAndUsuarioId(Long id, Long usuarioId);
 

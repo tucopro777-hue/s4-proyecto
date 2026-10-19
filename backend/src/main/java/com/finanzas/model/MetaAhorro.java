@@ -41,25 +41,49 @@ public class MetaAhorro {
     /** Fecha objetivo para cumplir la meta; opcional. */
     private LocalDate fechaLimite;
 
+    /**
+     * Porcentaje de cada ingreso que se aporta automáticamente a esta meta (0 < x ≤ 100).
+     * NULL significa que el aporte automático está desactivado.
+     */
+    @Column(precision = 5, scale = 2)
+    private BigDecimal porcentajeAutomatico;
+
     /** Requerido por JPA. */
     protected MetaAhorro() {
     }
 
-    public MetaAhorro(Usuario usuario, String nombre, BigDecimal montoObjetivo, LocalDate fechaLimite) {
+    public MetaAhorro(Usuario usuario, String nombre, BigDecimal montoObjetivo, LocalDate fechaLimite,
+                      BigDecimal porcentajeAutomatico) {
         this.usuario = usuario;
         this.nombre = nombre;
         this.montoObjetivo = montoObjetivo;
         this.fechaLimite = fechaLimite;
+        this.porcentajeAutomatico = porcentajeAutomatico;
     }
 
-    public void actualizar(String nombre, BigDecimal montoObjetivo, LocalDate fechaLimite) {
+    public void actualizar(String nombre, BigDecimal montoObjetivo, LocalDate fechaLimite,
+                           BigDecimal porcentajeAutomatico) {
         this.nombre = nombre;
         this.montoObjetivo = montoObjetivo;
         this.fechaLimite = fechaLimite;
+        this.porcentajeAutomatico = porcentajeAutomatico;
     }
 
     public void aportar(BigDecimal monto) {
         this.montoActual = montoActual.add(monto);
+    }
+
+    /** Quita dinero de la meta, p. ej. al anular un aporte automático. */
+    public void restar(BigDecimal monto) {
+        this.montoActual = montoActual.subtract(monto);
+    }
+
+    public boolean estaCompletada() {
+        return montoActual.compareTo(montoObjetivo) >= 0;
+    }
+
+    public BigDecimal getPorcentajeAutomatico() {
+        return porcentajeAutomatico;
     }
 
     public Long getId() {

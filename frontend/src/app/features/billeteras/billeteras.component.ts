@@ -32,10 +32,17 @@ export class BilleteraComponent implements OnInit {
   cargando = true;
   guardando = false;
   desactivandoId: number | null = null;
+  /** Billetera cuya desactivación espera la contraseña del usuario. */
+  billeteraADesactivar: Billetera | null = null;
+  errorDesactivar: string | null = null;
   error: string | null = null;
   exito: string | null = null;
 
   readonly divisas = ['BOB', 'USD', 'EUR'];
+
+  readonly formDesactivar = this.fb.nonNullable.group({
+    password: ['', [Validators.required]],
+  });
 
   readonly form = this.fb.nonNullable.group({
     nombre: ['', [Validators.required, Validators.maxLength(100), nombreNoVacio]],
@@ -74,27 +81,43 @@ export class BilleteraComponent implements OnInit {
       });
   }
 
-  desactivar(billetera: Billetera): void {
-    const confirmado = window.confirm(
-      `¿Desactivar la billetera "${billetera.nombre}"? Dejará de aparecer en la lista.`,
-    );
-    if (!confirmado) {
+  /** Abre la confirmación con contraseña para la billetera elegida. */
+  iniciarDesactivacion(billetera: Billetera): void {
+    this.billeteraADesactivar = billetera;
+    this.formDesactivar.reset({ password: '' });
+    this.errorDesactivar = null;
+  }
+
+  cancelarDesactivacion(): void {
+    this.billeteraADesactivar = null;
+    this.errorDesactivar = null;
+  }
+
+  confirmarDesactivacion(): void {
+    const billetera = this.billeteraADesactivar;
+    if (!billetera) {
+      return;
+    }
+    if (this.formDesactivar.invalid) {
+      this.formDesactivar.markAllAsTouched();
       return;
     }
 
     this.desactivandoId = billetera.id;
-    this.error = null;
+    this.errorDesactivar = null;
     this.exito = null;
 
-    this.billeteraService.desactivar(billetera.id).subscribe({
+    this.billeteraService.desactivar(billetera.id, this.formDesactivar.getRawValue().password).subscribe({
       next: () => {
         this.desactivandoId = null;
+        this.billeteraADesactivar = null;
+        this.exito = `Billetera "${billetera.nombre}" desactivada.`;
         // Se quita de la lista local para que la vista se actualice al instante
         this.billeteras = this.billeteras.filter((b) => b.id !== billetera.id);
       },
       error: (err: HttpErrorResponse) => {
         this.desactivandoId = null;
-        this.error = mensajeErrorBilletera(err);
+        this.errorDesactivar = mensajeErrorBilletera(err);
       },
     });
   }

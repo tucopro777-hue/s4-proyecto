@@ -40,6 +40,20 @@
           <input id="fecha" type="date" formControlName="fechaLimite" />
         </div>
 
+        <div class="campo campo-check">
+          <label class="check">
+            <input type="checkbox" formControlName="automatico" />
+            Aportar automáticamente un % de cada ingreso
+          </label>
+        </div>
+
+        @if (form.controls.automatico.value) {
+          <div class="campo">
+            <label for="porcentaje">Porcentaje de cada ingreso (%)</label>
+            <input id="porcentaje" type="number" min="0.01" max="100" step="0.01" formControlName="porcentaje" />
+          </div>
+        }
+
         <button type="submit" class="btn-primary" [disabled]="guardando">
           {{ guardando ? 'Guardando...' : 'Crear meta' }}
         </button>
@@ -71,6 +85,18 @@
                       <input id="edit-fecha-{{ meta.id }}" type="date" formControlName="fechaLimite" />
                     </div>
                   </div>
+                  <div class="campo campo-check">
+                    <label class="check" for="edit-automatico-{{ meta.id }}">
+                      <input id="edit-automatico-{{ meta.id }}" type="checkbox" formControlName="automatico" />
+                      Aportar automáticamente un % de cada ingreso
+                    </label>
+                  </div>
+                  @if (formEdicion.controls.automatico.value) {
+                    <div class="campo">
+                      <label for="edit-porcentaje-{{ meta.id }}">Porcentaje de cada ingreso (%)</label>
+                      <input id="edit-porcentaje-{{ meta.id }}" type="number" min="0.01" max="100" step="0.01" formControlName="porcentaje" />
+                    </div>
+                  }
                   <div class="acciones">
                     <button type="submit" class="btn-mini" [disabled]="guardandoEdicion">
                       {{ guardandoEdicion ? 'Guardando...' : 'Guardar cambios' }}
@@ -94,11 +120,31 @@
                 }
               </div>
 
+              @if (meta.porcentajeAutomatico !== null) {
+                <div class="auto">
+                  Recibe el {{ meta.porcentajeAutomatico | number: '1.0-2' }} % de cada ingreso
+                </div>
+              }
+
               <div class="barra" role="progressbar" [attr.aria-valuenow]="meta.porcentaje" aria-valuemin="0" aria-valuemax="100">
                 <div class="relleno" [class.completa]="meta.completada" [style.width.%]="porcentajeVisible(meta)"></div>
               </div>
 
               <div class="acciones">
+                <select
+                  class="aporte-billetera"
+                  [disabled]="billeteras.length === 0"
+                  [value]="billeteraAporte[meta.id] ?? ''"
+                  (change)="billeteraAporte[meta.id] = +$any($event.target).value"
+                  [attr.aria-label]="'Billetera de origen para ' + meta.nombre"
+                >
+                  <option value="" disabled>
+                    {{ billeteras.length === 0 ? 'Sin billeteras' : 'Desde billetera...' }}
+                  </option>
+                  @for (billetera of billeteras; track billetera.id) {
+                    <option [value]="billetera.id">{{ etiquetaBilletera(billetera) }}</option>
+                  }
+                </select>
                 <input
                   class="aporte"
                   type="number"

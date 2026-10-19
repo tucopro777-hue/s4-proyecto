@@ -33,9 +33,9 @@ export class BilleteraService {
     return this.http.post<Billetera>(this.apiUrl, datos);
   }
 
-  /** Desactivación lógica en el backend; la billetera deja de listarse. */
-  desactivar(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  /** Desactivación lógica en el backend. Exige la contraseña del usuario para confirmar. */
+  desactivar(id: number, password: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, { body: { password } });
   }
 }
 
@@ -44,12 +44,16 @@ export function mensajeErrorBilletera(error: HttpErrorResponse): string {
   switch (error.status) {
     case 0:
       return 'No se pudo conectar con el servidor. Verifica que el backend esté activo.';
-    case 400:
-      return 'Revisa los datos introducidos.';
     case 401:
       return 'Tu sesión ha expirado. Vuelve a iniciar sesión.';
+    case 403:
+      return 'Contraseña incorrecta.';
     case 404:
       return 'La billetera ya no existe.';
+    case 409:
+      return error.error?.message ?? 'Ya tienes una billetera activa con ese nombre.';
+    case 400:
+      return error.error?.message ?? 'Revisa los datos introducidos.';
     default:
       return 'Ocurrió un error inesperado. Inténtalo de nuevo.';
   }

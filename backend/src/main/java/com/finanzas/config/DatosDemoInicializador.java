@@ -127,7 +127,7 @@ public class DatosDemoInicializador implements ApplicationRunner {
 
         // Meta de ahorro con un primer aporte
         var meta = metaAhorroService.crear(EMAIL, new MetaAhorroRequest(
-                "Viaje a Lima", new BigDecimal("3000.00"), hoy.plusMonths(6)));
-        metaAhorroService.aportar(EMAIL, meta.id(), new AporteRequest(new BigDecimal("500.00")));
+                "Viaje a Lima", new BigDecimal("3000.00"), hoy.plusMonths(6), new BigDecimal("10.00")));
+        metaAhorroService.aportar(EMAIL, meta.id(), new AporteRequest(bancoBob.id(), new BigDecimal("500.00")));
     }
 }

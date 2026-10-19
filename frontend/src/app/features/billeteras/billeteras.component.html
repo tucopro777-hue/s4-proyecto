@@ -77,22 +77,46 @@
       } @else {
         <ul class="lista">
           @for (billetera of billeteras; track billetera.id) {
-            <li class="item">
-              <div class="item-info">
-                <span class="item-nombre">{{ billetera.nombre }}</span>
-                <span class="item-saldo" [class.positivo]="billetera.saldoActual > 0">
-                  {{ billetera.saldoActual | number: '1.2-2' }}
-                  <span class="item-divisa">{{ billetera.divisa }}</span>
-                </span>
+            <li class="item item-columna">
+              <div class="item-fila">
+                <div class="item-info">
+                  <span class="item-nombre">{{ billetera.nombre }}</span>
+                  <span class="item-saldo" [class.positivo]="billetera.saldoActual > 0">
+                    {{ billetera.saldoActual | number: '1.2-2' }}
+                    <span class="item-divisa">{{ billetera.divisa }}</span>
+                  </span>
+                </div>
+                @if (billeteraADesactivar?.id !== billetera.id) {
+                  <button type="button" class="btn-desactivar" (click)="iniciarDesactivacion(billetera)">
+                    Desactivar
+                  </button>
+                }
               </div>
-              <button
-                type="button"
-                class="btn-desactivar"
-                [disabled]="desactivandoId === billetera.id"
-                (click)="desactivar(billetera)"
-              >
-                {{ desactivandoId === billetera.id ? 'Desactivando...' : 'Desactivar' }}
-              </button>
+
+              @if (billeteraADesactivar?.id === billetera.id) {
+                <form class="confirmar-desactivar" [formGroup]="formDesactivar" (ngSubmit)="confirmarDesactivacion()" novalidate>
+                  <div class="form-field" [class.invalido]="campoInvalido(formDesactivar.controls.password)">
+                    <label for="password-{{ billetera.id }}">
+                      Escribe tu contraseña para desactivar "{{ billetera.nombre }}"
+                    </label>
+                    <input
+                      id="password-{{ billetera.id }}"
+                      type="password"
+                      formControlName="password"
+                      autocomplete="current-password"
+                    />
+                    @if (errorDesactivar) {
+                      <small>{{ errorDesactivar }}</small>
+                    }
+                  </div>
+                  <div class="acciones-confirmar">
+                    <button type="submit" class="btn-desactivar" [disabled]="desactivandoId === billetera.id">
+                      {{ desactivandoId === billetera.id ? 'Desactivando...' : 'Confirmar' }}
+                    </button>
+                    <button type="button" class="btn-cancelar" (click)="cancelarDesactivacion()">Cancelar</button>
+                  </div>
+                </form>
+              }
             </li>
           } @empty {
             <li class="estado">Aún no tienes billeteras. Registra la primera.</li>

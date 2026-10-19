@@ -108,6 +108,43 @@
   }
 }
 
+.item-columna {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.item-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.confirmar-desactivar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: var(--color-superficie-elevada);
+}
+
+.acciones-confirmar {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-cancelar {
+  padding: 8px 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: transparent;
+  color: var(--color-texto-suave);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
 .item-info {
   display: flex;
   flex-direction: column;

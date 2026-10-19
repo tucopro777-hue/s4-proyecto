@@ -2,6 +2,7 @@ package com.finanzas.controller; // Controladores REST
 
 import com.finanzas.dto.BilleteraRequest; // Datos para crear billetera
 import com.finanzas.dto.BilleteraResponse; // Datos de billetera devueltos
+import com.finanzas.dto.ConfirmarPasswordRequest; // Contraseña para confirmar la desactivación
 import com.finanzas.service.BilleteraService; // Lógica de billeteras
 import jakarta.validation.Valid; // Activa validaciones del DTO
 import org.springframework.http.HttpStatus; // Códigos HTTP
@@ -39,9 +40,11 @@ public class BilleteraController { // Endpoints de billeteras
                 .body(billeteraService.crear(autenticacion.getName(), request)); // Crea la billetera del usuario
     }
 
-    @DeleteMapping("/{id}") // DELETE /api/billeteras/{id}
-    public ResponseEntity<Void> desactivar(Authentication autenticacion, @PathVariable Long id) { // Id desde la URL
-        billeteraService.desactivar(autenticacion.getName(), id); // Desactiva la billetera del usuario
+    @DeleteMapping("/{id}") // DELETE /api/billeteras/{id} con la contraseña en el cuerpo
+    public ResponseEntity<Void> desactivar(Authentication autenticacion, // Usuario actual
+                                           @PathVariable Long id, // Id desde la URL
+                                           @Valid @RequestBody ConfirmarPasswordRequest request) { // Contraseña validada
+        billeteraService.desactivar(autenticacion.getName(), id, request.password()); // Desactiva si la contraseña es correcta
         return ResponseEntity.noContent().build(); // Responde 204 sin cuerpo
     }
 }
