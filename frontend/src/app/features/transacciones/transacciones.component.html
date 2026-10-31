@@ -8,7 +8,12 @@
   </header>
 
   @if (error) {
-    <div class="alert-error" role="alert">{{ error }}</div>
+    <div [class.alert-conexion]="errorConexion" class="alert-error" role="alert">
+      {{ error }}
+      @if (errorConexion) {
+        <button type="button" class="reintentar" (click)="buscar()">Reintentar</button>
+      }
+    </div>
   }
   @if (exito) {
     <div class="alert-exito" role="status">{{ exito }}</div>
@@ -114,8 +119,55 @@
     <section class="tarjeta">
       <h2>Historial reciente</h2>
 
+      <!-- Panel de búsqueda con filtros avanzados (Persona 3) -->
+      <form
+        class="panel-filtros"
+        role="search"
+        aria-label="Filtros de búsqueda de movimientos"
+        [formGroup]="filtrosForm"
+        (ngSubmit)="buscar()"
+        novalidate
+      >
+        <div class="campo">
+          <label for="filtro-desde">Desde</label>
+          <input id="filtro-desde" type="date" formControlName="desde" aria-describedby="ayuda-filtros" />
+        </div>
+
+        <div class="campo">
+          <label for="filtro-hasta">Hasta</label>
+          <input id="filtro-hasta" type="date" formControlName="hasta" />
+        </div>
+
+        <div class="campo">
+          <label for="filtro-categoria">Categoría</label>
+          <select id="filtro-categoria" formControlName="categoriaId">
+            <option [ngValue]="null">Todas</option>
+            @for (categoria of categorias; track categoria.id) {
+              <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="filtro-tipo">Tipo</label>
+          <select id="filtro-tipo" formControlName="tipo">
+            <option value="">Todos</option>
+            <option value="INGRESO">Ingreso</option>
+            <option value="GASTO">Gasto</option>
+          </select>
+        </div>
+
+        <div class="acciones-filtros">
+          <button type="submit" class="btn-primary" [disabled]="cargando">Buscar</button>
+          <button type="button" class="btn-secundario" (click)="limpiar()" [disabled]="cargando">Limpiar</button>
+        </div>
+        <small id="ayuda-filtros" class="ayuda">Los filtros se combinan entre sí. Puedes dejar campos vacíos.</small>
+      </form>
+
       @if (cargando) {
         <p class="estado">Cargando movimientos...</p>
+      } @else if (sinResultados) {
+        <p class="estado" role="status">No hay movimientos con esos filtros.</p>
       } @else {
         <ul class="lista">
           @for (t of recientes; track t.id) {
@@ -140,7 +192,9 @@
               </div>
             </li>
           } @empty {
-            <li class="estado">Aún no hay movimientos registrados.</li>
+            @if (!filtrosActivos) {
+              <li class="estado">Aún no hay movimientos registrados.</li>
+            }
           }
         </ul>
       }
