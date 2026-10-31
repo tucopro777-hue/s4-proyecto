@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export type TipoTransaccion = 'INGRESO' | 'GASTO';
@@ -39,6 +39,16 @@ export interface TransaccionRequest {
   categoriaId: number;
 }
 
+/** Filtros opcionales para el listado de movimientos (Persona 3). */
+export interface FiltrosTransaccion {
+  /** Fecha inicial del rango, yyyy-MM-dd. */
+  desde?: string | null;
+  /** Fecha final del rango, yyyy-MM-dd. */
+  hasta?: string | null;
+  categoriaId?: number | null;
+  tipo?: TipoTransaccion | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TransaccionService {
   private readonly http = inject(HttpClient);
@@ -47,6 +57,28 @@ export class TransaccionService {
 
   listar(): Observable<Transaccion[]> {
     return this.http.get<Transaccion[]>(this.apiUrl);
+  }
+
+  /**
+   * Lista movimientos con filtros avanzados. Los parámetros vacíos, nulos o
+   * indefinidos se OMITEN del HttpParams para que el backend aplique el listado
+   * completo o solo los filtros activos.
+   */
+  listarConFiltros(filtros: FiltrosTransaccion): Observable<Transaccion[]> {
+    let params = new HttpParams();
+    if (filtros.desde) {
+      params = params.set('desde', filtros.desde);
+    }
+    if (filtros.hasta) {
+      params = params.set('hasta', filtros.hasta);
+    }
+    if (filtros.categoriaId != null) {
+      params = params.set('categoriaId', String(filtros.categoriaId));
+    }
+    if (filtros.tipo) {
+      params = params.set('tipo', filtros.tipo);
+    }
+    return this.http.get<Transaccion[]>(this.apiUrl, { params });
   }
 
   registrar(datos: TransaccionRequest): Observable<Transaccion> {

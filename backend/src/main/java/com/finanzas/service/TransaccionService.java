@@ -17,7 +17,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+<<<<<<< HEAD
 import java.math.BigDecimal;
+=======
+import java.time.LocalDate;
+>>>>>>> 7e3fa49b53a7fccdc404807142721c14f634a5d5
 import java.util.List;
 
 /**
@@ -50,9 +54,26 @@ public class TransaccionService {
 
     @Transactional(readOnly = true)
     public List<TransaccionResponse> listarDeUsuario(String emailUsuario) {
+        // Sin filtros: se reutiliza el listado predeterminado original
+        return listarConFiltros(emailUsuario, null, null, null, null);
+    }
+
+    /**
+     * Lista los movimientos del usuario aplicando los filtros opcionales recibidos.
+     * Los filtros se combinan entre sí (AND) y SIEMPRE se excluyen las anuladas.
+     * Si no llega ningún filtro, se devuelve el listado predeterminado completo.
+     */
+    @Transactional(readOnly = true)
+    public List<TransaccionResponse> listarConFiltros(String emailUsuario,
+                                                      LocalDate desde,
+                                                      LocalDate hasta,
+                                                      Long categoriaId,
+                                                      TipoTransaccion tipo) {
         Usuario usuario = buscarUsuario(emailUsuario);
 
-        return transaccionRepository.findByUsuarioIdAndAnuladaFalseOrderByFechaDescIdDesc(usuario.getId()).stream()
+        return transaccionRepository
+                .buscarConFiltros(usuario.getId(), desde, hasta, categoriaId, tipo)
+                .stream()
                 .map(transaccion -> toResponse(transaccion, null))
                 .toList();
     }
