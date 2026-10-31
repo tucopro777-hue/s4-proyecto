@@ -9,6 +9,7 @@ import { Categoria, CategoriaService } from '../categorias/categoria.service';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
 import {
   AlertaPresupuesto,
+  FiltrosTransaccion,
   Transaccion,
   TipoTransaccion,
   TransaccionService,
@@ -43,9 +44,24 @@ export class TransaccionesComponent implements OnInit {
   guardando = false;
   error: string | null = null;
   exito: string | null = null;
+  /** true si la última petición falló por conexión (backend caído o red). */
+  errorConexion = false;
   /** Aviso de presupuesto del último gasto registrado; no bloquea la operación. */
   alerta: AlertaPresupuesto | null = null;
   anulandoId: number | null = null;
+
+  /** Mensaje informativo cuando el filtro no devuelve resultados. */
+  sinResultados = false;
+  /** Indica si hay filtros activos (para distinguir "sin datos" de "sin resultados con filtros"). */
+  filtrosActivos = false;
+
+  /** Formulario independiente del panel de filtros avanzados. */
+  readonly filtrosForm = this.fb.nonNullable.group({
+    desde: [''],
+    hasta: [''],
+    categoriaId: [null as number | null],
+    tipo: ['' as TipoTransaccion | ''],
+  });
 
   readonly tipos: { valor: TipoTransaccion; etiqueta: string }[] = [
     { valor: 'GASTO', etiqueta: 'Gasto' },
@@ -127,7 +143,7 @@ export class TransaccionesComponent implements OnInit {
         },
         error: (err: HttpErrorResponse) => {
           this.guardando = false;
-          this.error = mensajeErrorTransaccion(err);
+          this.registrarError(err);
         },
       });
   }
@@ -154,7 +170,7 @@ export class TransaccionesComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.anulandoId = null;
-        this.error = mensajeErrorTransaccion(err);
+        this.registrarError(err);
       },
     });
   }
@@ -166,23 +182,79 @@ export class TransaccionesComponent implements OnInit {
   /** Recarga saldos, categorías e historial para que todas las vistas reflejen el movimiento. */
   private cargarTodo(): void {
     this.cargando = true;
+    this.error = null;
     forkJoin({
       billeteras: this.billeteraService.listar(),
       categorias: this.categoriaService.listar(),
-      transacciones: this.transaccionService.listar(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ billeteras, categorias, transacciones }) => {
+        next: ({ billeteras, categorias }) => {
           this.billeteras = billeteras;
           this.categorias = categorias;
-          this.transacciones = transacciones;
           this.cargando = false;
+          // El backend respondió: se oculta cualquier alerta de conexión previa
+          this.errorConexion = false;
         },
         error: (err: HttpErrorResponse) => {
           this.cargando = false;
-          this.error = mensajeErrorTransaccion(err);
+          this.registrarError(err);
         },
       });
+  }
+
+  /** Carga el historial respetando los filtros activos del panel. */
+  private cargarTransacciones(): void {
+    this.cargando = true;
+    this.error = null;
+
+    const peticion = this.filtrosActivos
+      ? this.transaccionService.listarConFiltros(this.filtrosForm.value as FiltrosTransaccion)
+      : this.transaccionService.listar();
+
+    peticion
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (transacciones) => {
+          this.transacciones = transacciones;
+          // Lista vacía CON filtros activos: mensaje informativo en pantalla
+          this.sinResultados = this.filtrosActivos && transacciones.length === 0;
+          this.cargando = false;
+          // El backend respondió: la alerta de conexión se oculta automáticamente
+          this.errorConexion = false;
+        },
+        error: (err: HttpErrorResponse) => {
+          this.cargando = false;
+          this.registrarError(err);
+        },
+      });
+  }
+
+  /**
+   * Punto único para registrar errores HTTP en el componente:
+   * distingue fallo de conexión (status 0) de errores de negocio y evita
+   * que una alerta antigua persista cuando una llamada posterior tiene éxito.
+   */
+  private registrarError(err: HttpErrorResponse): void {
+    // El interceptor ya traduce el error; err.error llega como mensaje de texto
+    const mensaje = typeof err.error === 'string' ? err.error : mensajeErrorTransaccion(err);
+    this.errorConexion = err.status === 0;
+    this.error = mensaje;
+  }
+
+  /** Aplica los filtros del panel y recarga el historial. */
+  buscar(): void {
+    const valores = this.filtrosForm.getRawValue();
+    // Solo marca como "filtros activos" si realmente se envió algún criterio
+    this.filtrosActivos = Boolean(valores.desde || valores.hasta || valores.categoriaId || valores.tipo);
+    this.cargarTransacciones();
+  }
+
+  /** Resetea el panel y vuelve al listado general predeterminado. */
+  limpiar(): void {
+    this.filtrosForm.reset({ desde: '', hasta: '', categoriaId: null, tipo: '' });
+    this.filtrosActivos = false;
+    this.sinResultados = false;
+    this.cargarTransacciones();
   }
 }
