@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:16
+    container_name: clase-postgres-clase-1
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: alumno
+      POSTGRES_PASSWORD: alumno123
+      POSTGRES_DB: clase_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+
+volumes:
+  pgdata:
