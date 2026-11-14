@@ -1,6 +1,7 @@
 package com.finanzas.service;
 
 import com.finanzas.dto.DashboardResponse;
+import com.finanzas.dto.GastoCategoriaResponse;
 import com.finanzas.model.TipoTransaccion;
 import com.finanzas.model.Usuario;
 import com.finanzas.repository.DashboardRepository;
@@ -13,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 
 /**
  * Calcula los indicadores del panel principal del usuario autenticado.
@@ -49,6 +51,14 @@ public class DashboardService {
                 usuario.getId(), mes.getYear(), mes.getMonthValue());
 
         return new DashboardResponse(saldoTotal, ingresosMes, gastosMes, balanceMes, presupuestosExcedidos);
+    }
+
+    /** Distribución del gasto del mes en curso por categoría (para la gráfica del panel). */
+    @Transactional(readOnly = true)
+    public List<GastoCategoriaResponse> gastosPorCategoria(String emailUsuario) {
+        Usuario usuario = buscarUsuario(emailUsuario);
+        YearMonth mes = YearMonth.now();
+        return dashboardRepository.gastosPorCategoria(usuario.getId(), mes.atDay(1), mes.atEndOfMonth());
     }
 
     private Usuario buscarUsuario(String email) {

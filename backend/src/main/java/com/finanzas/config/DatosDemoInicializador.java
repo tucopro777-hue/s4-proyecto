@@ -31,7 +31,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * Crea un usuario de demostración con billeteras, categorías y movimientos de ejemplo.
+ * Datos iniciales: crea un usuario de demostración con billeteras, categorías, movimientos,
+ * presupuestos, un traspaso y una meta, para que la base de datos nunca arranque vacía.
  *
  * Se ejecuta solo si app.demo.enabled=true y si el usuario aún no existe, así que es seguro
  * arrancar la aplicación varias veces.  Todo corre en una sola transacción:
@@ -99,31 +100,52 @@ public class DatosDemoInicializador implements ApplicationRunner {
         var comida = categoriaService.crear(EMAIL, new CategoriaRequest("Comida", TipoCategoria.GASTO, "#FF8800", "food"));
         var transporte = categoriaService.crear(EMAIL, new CategoriaRequest("Transporte", TipoCategoria.GASTO, "#3B82F6", "transport"));
         var servicios = categoriaService.crear(EMAIL, new CategoriaRequest("Servicios", TipoCategoria.GASTO, "#A855F7", "bills"));
+        var ocio = categoriaService.crear(EMAIL, new CategoriaRequest("Ocio", TipoCategoria.GASTO, "#EC4899", "leisure"));
+        categoriaService.crear(EMAIL, new CategoriaRequest("Salud", TipoCategoria.GASTO, "#14B8A6", "health"));
         var salario = categoriaService.crear(EMAIL, new CategoriaRequest("Salario", TipoCategoria.INGRESO, "#0ECB81", "salary"));
+        var extras = categoriaService.crear(EMAIL, new CategoriaRequest("Ingresos extra", TipoCategoria.INGRESO, "#84CC16", "other"));
 
         LocalDate hoy = LocalDate.now();
+        LocalDate inicioMes = hoy.withDayOfMonth(1);
 
-        // Movimientos del mes: el salario entra al banco y los gastos salen de ambas cuentas
+        // Movimientos del mes: los ingresos entran al banco y los gastos salen de ambas cuentas
         transaccionService.registrar(EMAIL, new TransaccionRequest(
                 new BigDecimal("2000.00"), TipoTransaccion.INGRESO, "Salario mensual",
-                hoy.withDayOfMonth(1), bancoBob.id(), salario.id()));
+                inicioMes, bancoBob.id(), salario.id()));
+        transaccionService.registrar(EMAIL, new TransaccionRequest(
+                new BigDecimal("600.00"), TipoTransaccion.INGRESO, "Trabajo independiente",
+                inicioMes, bancoBob.id(), extras.id()));
         transaccionService.registrar(EMAIL, new TransaccionRequest(
                 new BigDecimal("120.00"), TipoTransaccion.GASTO, "Almuerzos de la semana",
-                hoy.withDayOfMonth(1), cajaBob.id(), comida.id()));
+                inicioMes, cajaBob.id(), comida.id()));
+        transaccionService.registrar(EMAIL, new TransaccionRequest(
+                new BigDecimal("390.00"), TipoTransaccion.GASTO, "Supermercado",
+                inicioMes, bancoBob.id(), comida.id()));
         transaccionService.registrar(EMAIL, new TransaccionRequest(
                 new BigDecimal("40.00"), TipoTransaccion.GASTO, "Pasajes",
-                hoy.withDayOfMonth(1), cajaBob.id(), transporte.id()));
+                inicioMes, cajaBob.id(), transporte.id()));
+        transaccionService.registrar(EMAIL, new TransaccionRequest(
+                new BigDecimal("80.00"), TipoTransaccion.GASTO, "Taxis",
+                inicioMes, cajaBob.id(), transporte.id()));
         transaccionService.registrar(EMAIL, new TransaccionRequest(
                 new BigDecimal("150.00"), TipoTransaccion.GASTO, "Internet",
-                hoy.withDayOfMonth(1), bancoBob.id(), servicios.id()));
+                inicioMes, bancoBob.id(), servicios.id()));
+        transaccionService.registrar(EMAIL, new TransaccionRequest(
+                new BigDecimal("90.00"), TipoTransaccion.GASTO, "Cine y salida",
+                inicioMes, cajaBob.id(), ocio.id()));
 
-        // Presupuesto del mes sobre la categoría de comida (el consumo se calcula con los gastos ya registrados)
+        // Presupuestos del mes en los tres estados posibles (el consumo se calcula con los gastos ya registrados):
+        // Servicios 150/400 = en orden, Comida 510/600 = advertencia (85 %), Transporte 120/100 = excedido
+        presupuestoService.crear(EMAIL, new PresupuestoRequest(servicios.id(), new BigDecimal("400.00"),
+                hoy.getYear(), hoy.getMonthValue()));
         presupuestoService.crear(EMAIL, new PresupuestoRequest(comida.id(), new BigDecimal("600.00"),
+                hoy.getYear(), hoy.getMonthValue()));
+        presupuestoService.crear(EMAIL, new PresupuestoRequest(transporte.id(), new BigDecimal("100.00"),
                 hoy.getYear(), hoy.getMonthValue()));
 
         // Traspaso de ejemplo entre dos billeteras BOB
         traspasoService.transferir(EMAIL, new TraspasoRequest(
-                bancoBob.id(), cajaBob.id(), new BigDecimal("200.00"), "Fondo para gastos", hoy.withDayOfMonth(1)));
+                bancoBob.id(), cajaBob.id(), new BigDecimal("200.00"), "Fondo para gastos", inicioMes));
 
         // Meta de ahorro con un primer aporte
         var meta = metaAhorroService.crear(EMAIL, new MetaAhorroRequest(

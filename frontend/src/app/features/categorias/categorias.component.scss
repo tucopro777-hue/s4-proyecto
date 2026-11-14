@@ -258,3 +258,7 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+.categorias-header.encabezado {
+  flex-wrap: wrap;
+}

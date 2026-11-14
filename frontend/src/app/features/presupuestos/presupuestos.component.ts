@@ -5,13 +5,21 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { AlertasPresupuestoService } from '../../core/alertas/alertas-presupuesto.service';
 import { Categoria, CategoriaService } from '../categorias/categoria.service';
-import { Presupuesto, PresupuestoService, mensajeErrorPresupuesto } from './presupuesto.service';
+import {
+  Presupuesto,
+  PresupuestoService,
+  etiquetaNivel,
+  mensajeErrorPresupuesto,
+  porcentajeConsumo,
+} from './presupuesto.service';
 
 @Component({
   selector: 'app-presupuestos',
   standalone: true,
-  imports: [ReactiveFormsModule, NavegacionComponent, DecimalPipe, NgClass],
+  imports: [ReactiveFormsModule, NavegacionComponent, ModalComponent, DecimalPipe, NgClass],
   templateUrl: './presupuestos.component.html',
   styleUrl: './presupuestos.component.scss',
 })
@@ -19,7 +27,11 @@ export class PresupuestosComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly presupuestoService = inject(PresupuestoService);
   private readonly categoriaService = inject(CategoriaService);
+  private readonly alertas = inject(AlertasPresupuestoService);
   private readonly destroyRef = inject(DestroyRef);
+
+  readonly etiqueta = etiquetaNivel;
+  readonly consumo = porcentajeConsumo;
 
   readonly meses = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -52,6 +64,20 @@ export class PresupuestosComponent implements OnInit {
     this.periodo.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.cargarPresupuestos());
+  }
+
+  /** Controla la ventana emergente del formulario de alta. */
+  modalAbierto = false;
+
+  abrirModal(): void {
+    this.error = null;
+    this.exito = null;
+    this.modalAbierto = true;
+  }
+
+  cerrarModal(): void {
+    this.modalAbierto = false;
+    this.error = null;
   }
 
   ngOnInit(): void {
@@ -102,6 +128,7 @@ export class PresupuestosComponent implements OnInit {
       .subscribe({
         next: () => {
           this.guardando = false;
+          this.modalAbierto = false;
           this.exito = 'Presupuesto creado.';
           this.form.reset({ categoriaId: null, montoLimite: null });
           this.cargarPresupuestos();
@@ -123,6 +150,12 @@ export class PresupuestosComponent implements OnInit {
   cancelarEdicion(): void {
     this.editandoId = null;
     this.montoEditado = null;
+    this.error = null;
+  }
+
+  /** Presupuesto cuyo límite se está editando en la ventana emergente. */
+  get presupuestoEditado(): Presupuesto | null {
+    return this.presupuestos.find((p) => p.id === this.editandoId) ?? null;
   }
 
   guardarEdicion(p: Presupuesto): void {
@@ -157,6 +190,7 @@ export class PresupuestosComponent implements OnInit {
       next: () => {
         this.eliminandoId = null;
         this.presupuestos = this.presupuestos.filter((x) => x.id !== p.id);
+        this.alertas.refrescar();
       },
       error: (err: HttpErrorResponse) => {
         this.eliminandoId = null;
@@ -200,6 +234,8 @@ export class PresupuestosComponent implements OnInit {
         next: (presupuestos) => {
           this.presupuestos = presupuestos;
           this.cargando = false;
+          // Tras crear o editar un límite, la campanita se pone al día
+          this.alertas.refrescar();
         },
         error: (err: HttpErrorResponse) => {
           this.cargando = false;

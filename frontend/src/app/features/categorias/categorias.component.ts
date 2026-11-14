@@ -8,6 +8,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
 import {
   Categoria,
   CategoriaService,
@@ -25,7 +26,7 @@ function nombreNoVacio(control: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-categorias',
   standalone: true,
-  imports: [ReactiveFormsModule, NavegacionComponent],
+  imports: [ReactiveFormsModule, NavegacionComponent, ModalComponent],
   templateUrl: './categorias.component.html',
   styleUrl: './categorias.component.scss',
 })
@@ -68,6 +69,20 @@ export class CategoriasComponent implements OnInit {
     return this.categorias.filter((c) => c.tipo === 'INGRESO');
   }
 
+  /** Controla la ventana emergente del formulario de alta. */
+  modalAbierto = false;
+
+  abrirModal(): void {
+    this.error = null;
+    this.exito = null;
+    this.modalAbierto = true;
+  }
+
+  cerrarModal(): void {
+    this.modalAbierto = false;
+    this.error = null;
+  }
+
   ngOnInit(): void {
     this.cargarCategorias();
   }
@@ -88,6 +103,7 @@ export class CategoriasComponent implements OnInit {
       .subscribe({
         next: () => {
           this.guardando = false;
+          this.modalAbierto = false;
           this.exito = 'Categoría creada correctamente.';
           this.form.reset(this.valoresPorDefecto);
           this.cargarCategorias();

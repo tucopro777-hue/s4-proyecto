@@ -6,123 +6,126 @@
       <span class="auth-marca">Finanzas</span>
       <h1>Mis billeteras</h1>
     </div>
+    <button type="button" class="btn-accion" (click)="abrirModal()">+ Nueva billetera</button>
   </header>
 
-  @if (error) {
+  @if (error && !modalAbierto) {
     <div class="alert-error" role="alert">{{ error }}</div>
   }
   @if (exito) {
     <div class="alert-exito" role="status">{{ exito }}</div>
   }
 
-  <div class="billeteras-grid">
-    <section class="tarjeta">
-      <h2>Nueva billetera</h2>
+  @if (cargando) {
+    <p class="estado">Cargando billeteras...</p>
+  } @else if (billeteras.length === 0) {
+    <p class="estado-vacio">Aún no tienes billeteras. Registra la primera con «Nueva billetera».</p>
+  } @else {
+    <ul class="tarjetas">
+      @for (billetera of billeteras; track billetera.id) {
+        <li class="tarjeta-dato">
+          <div class="billetera-cabecera">
+            <span class="item-nombre">{{ billetera.nombre }}</span>
+            <span class="item-divisa">{{ billetera.divisa }}</span>
+          </div>
 
-      <form [formGroup]="form" (ngSubmit)="registrar()" novalidate>
-        <div class="form-field" [class.invalido]="campoInvalido(form.controls.nombre)">
-          <label for="nombre">Nombre</label>
-          <input
-            id="nombre"
-            type="text"
-            formControlName="nombre"
-            maxlength="100"
-            placeholder="Ej. Cuenta de ahorros"
-          />
-          @if (campoInvalido(form.controls.nombre)) {
-            @if (form.controls.nombre.errors?.['required'] || form.controls.nombre.errors?.['vacio']) {
-              <small>El nombre es obligatorio.</small>
-            }
-          }
-        </div>
+          <span class="billetera-etiqueta">Saldo actual</span>
+          <strong class="billetera-saldo" [class.positivo]="billetera.saldoActual > 0">
+            {{ billetera.saldoActual | number: '1.2-2' }}
+          </strong>
+          <span class="billetera-inicial">Saldo inicial: {{ billetera.saldoInicial | number: '1.2-2' }}</span>
 
-        <div class="form-field" [class.invalido]="campoInvalido(form.controls.saldoInicial)">
-          <label for="saldoInicial">Saldo inicial</label>
-          <input
-            id="saldoInicial"
-            type="number"
-            min="0"
-            step="0.01"
-            formControlName="saldoInicial"
-          />
-          @if (campoInvalido(form.controls.saldoInicial)) {
-            <small>El saldo inicial debe ser mayor o igual a 0.</small>
-          }
-        </div>
-
-        <div class="form-field" [class.invalido]="campoInvalido(form.controls.divisa)">
-          <label for="divisa">Divisa</label>
-          <select id="divisa" formControlName="divisa">
-            @for (divisa of divisas; track divisa) {
-              <option [value]="divisa">{{ divisa }}</option>
-            }
-          </select>
-        </div>
-
-        <button type="submit" class="btn-primary" [disabled]="guardando">
-          @if (guardando) {
-            Guardando...
-          } @else {
-            Registrar billetera
-          }
-        </button>
-      </form>
-    </section>
-
-    <section class="tarjeta">
-      <h2>Billeteras activas</h2>
-
-      @if (cargando) {
-        <p class="estado">Cargando billeteras...</p>
-      } @else {
-        <ul class="lista">
-          @for (billetera of billeteras; track billetera.id) {
-            <li class="item item-columna">
-              <div class="item-fila">
-                <div class="item-info">
-                  <span class="item-nombre">{{ billetera.nombre }}</span>
-                  <span class="item-saldo" [class.positivo]="billetera.saldoActual > 0">
-                    {{ billetera.saldoActual | number: '1.2-2' }}
-                    <span class="item-divisa">{{ billetera.divisa }}</span>
-                  </span>
-                </div>
-                @if (billeteraADesactivar?.id !== billetera.id) {
-                  <button type="button" class="btn-desactivar" (click)="iniciarDesactivacion(billetera)">
-                    Desactivar
-                  </button>
-                }
-              </div>
-
-              @if (billeteraADesactivar?.id === billetera.id) {
-                <form class="confirmar-desactivar" [formGroup]="formDesactivar" (ngSubmit)="confirmarDesactivacion()" novalidate>
-                  <div class="form-field" [class.invalido]="campoInvalido(formDesactivar.controls.password)">
-                    <label for="password-{{ billetera.id }}">
-                      Escribe tu contraseña para desactivar "{{ billetera.nombre }}"
-                    </label>
-                    <input
-                      id="password-{{ billetera.id }}"
-                      type="password"
-                      formControlName="password"
-                      autocomplete="current-password"
-                    />
-                    @if (errorDesactivar) {
-                      <small>{{ errorDesactivar }}</small>
-                    }
-                  </div>
-                  <div class="acciones-confirmar">
-                    <button type="submit" class="btn-desactivar" [disabled]="desactivandoId === billetera.id">
-                      {{ desactivandoId === billetera.id ? 'Desactivando...' : 'Confirmar' }}
-                    </button>
-                    <button type="button" class="btn-cancelar" (click)="cancelarDesactivacion()">Cancelar</button>
-                  </div>
-                </form>
-              }
-            </li>
-          } @empty {
-            <li class="estado">Aún no tienes billeteras. Registra la primera.</li>
-          }
-        </ul>
+          <button type="button" class="btn-desactivar" (click)="iniciarDesactivacion(billetera)">
+            Desactivar
+          </button>
+        </li>
       }
-    </section>
-  </div>
+    </ul>
+  }
 </main>
+
+<app-modal titulo="Nueva billetera" [abierto]="modalAbierto" (cerrar)="cerrarModal()">
+  @if (error) {
+    <p class="modal-error" role="alert">{{ error }}</p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="registrar()" novalidate>
+    <div class="form-field" [class.invalido]="campoInvalido(form.controls.nombre)">
+      <label for="nombre">Nombre</label>
+      <input
+        id="nombre"
+        type="text"
+        formControlName="nombre"
+        maxlength="100"
+        placeholder="Ej. Cuenta de ahorros"
+      />
+      @if (campoInvalido(form.controls.nombre)) {
+        @if (form.controls.nombre.errors?.['required'] || form.controls.nombre.errors?.['vacio']) {
+          <small>El nombre es obligatorio.</small>
+        }
+      }
+    </div>
+
+    <div class="form-field" [class.invalido]="campoInvalido(form.controls.saldoInicial)">
+      <label for="saldoInicial">Saldo inicial</label>
+      <input
+        id="saldoInicial"
+        type="number"
+        min="0"
+        step="0.01"
+        formControlName="saldoInicial"
+      />
+      @if (campoInvalido(form.controls.saldoInicial)) {
+        <small>El saldo inicial debe ser mayor o igual a 0.</small>
+      }
+    </div>
+
+    <div class="form-field" [class.invalido]="campoInvalido(form.controls.divisa)">
+      <label for="divisa">Divisa</label>
+      <select id="divisa" formControlName="divisa">
+        @for (divisa of divisas; track divisa) {
+          <option [value]="divisa">{{ divisa }}</option>
+        }
+      </select>
+    </div>
+
+    <button type="submit" class="btn-primary" [disabled]="guardando">
+      @if (guardando) {
+        Guardando...
+      } @else {
+        Registrar billetera
+      }
+    </button>
+  </form>
+</app-modal>
+
+<app-modal
+  titulo="Desactivar billetera"
+  [abierto]="billeteraADesactivar !== null"
+  (cerrar)="cancelarDesactivacion()"
+>
+  @if (billeteraADesactivar; as billetera) {
+    <form [formGroup]="formDesactivar" (ngSubmit)="confirmarDesactivacion()" novalidate>
+      <div class="form-field" [class.invalido]="campoInvalido(formDesactivar.controls.password)">
+        <label for="password-desactivar">
+          Escribe tu contraseña para desactivar "{{ billetera.nombre }}"
+        </label>
+        <input
+          id="password-desactivar"
+          type="password"
+          formControlName="password"
+          autocomplete="current-password"
+        />
+        @if (errorDesactivar) {
+          <small>{{ errorDesactivar }}</small>
+        }
+      </div>
+      <div class="acciones-confirmar">
+        <button type="submit" class="btn-desactivar" [disabled]="desactivandoId === billetera.id">
+          {{ desactivandoId === billetera.id ? 'Desactivando...' : 'Confirmar' }}
+        </button>
+        <button type="button" class="btn-cancelar" (click)="cancelarDesactivacion()">Cancelar</button>
+      </div>
+    </form>
+  }
+</app-modal>

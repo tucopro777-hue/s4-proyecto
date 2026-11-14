@@ -30,6 +30,10 @@
   margin: 0;
   padding: 0;
   flex: 1;
+  // En pantallas estrechas los enlaces se desplazan; la campanita y "Cerrar sesión" quedan siempre visibles
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 
   a {
     display: block;

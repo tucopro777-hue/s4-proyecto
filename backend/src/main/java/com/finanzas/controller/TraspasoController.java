@@ -34,6 +34,6 @@ public class TraspasoController {
     public ResponseEntity<TraspasoResponse> transferir(Authentication autenticacion,
                                                        @Valid @RequestBody TraspasoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(traspasoService.transferir(autenticacion.getName(), request));
+                .body(traspasoService.transtraferir(autenticacion.getName(), request));
     }
 }

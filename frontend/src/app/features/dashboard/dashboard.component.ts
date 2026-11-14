@@ -1,23 +1,36 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
-import { DashboardResumen, DashboardService, mensajeErrorDashboard } from './dashboard.service';
+import { AlertasPresupuestoService } from '../../core/alertas/alertas-presupuesto.service';
+import { etiquetaNivel, porcentajeConsumo } from '../presupuestos/presupuesto.service';
+import { DashboardResumen, DashboardService, GastoCategoria, mensajeErrorDashboard } from './dashboard.service';
 
-/** Panel principal: muestra los indicadores del mes en tarjetas KPI. */
+/** Panel principal: indicadores del mes, gráfica de gastos por categoría y estado de los presupuestos. */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NavegacionComponent, DecimalPipe],
+  imports: [NavegacionComponent, DecimalPipe, NgClass, RouterLink],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
 export class DashboardComponent implements OnInit {
   private readonly dashboardService = inject(DashboardService);
+  private readonly alertas = inject(AlertasPresupuestoService);
 
   resumen: DashboardResumen | null = null;
+  gastos: GastoCategoria[] = [];
   cargando = true;
   error: string | null = null;
+
+  /** Presupuestos del mes; los carga la campanita de la barra de navegación. */
+  readonly presupuestos = this.alertas.presupuestos;
+  readonly porcentaje = porcentajeConsumo;
+  readonly etiqueta = etiquetaNivel;
+
+  readonly mesActual = new Date().toLocaleDateString('es', { month: 'long', year: 'numeric' });
 
   ngOnInit(): void {
     this.cargar();
@@ -27,9 +40,13 @@ export class DashboardComponent implements OnInit {
     this.cargando = true;
     this.error = null;
 
-    this.dashboardService.obtenerResumen().subscribe({
-      next: (datos) => {
-        this.resumen = datos;
+    forkJoin({
+      resumen: this.dashboardService.obtenerResumen(),
+      gastos: this.dashboardService.gastosPorCategoria(),
+    }).subscribe({
+      next: ({ resumen, gastos }) => {
+        this.resumen = resumen;
+        this.gastos = gastos;
         this.cargando = false;
       },
       error: (err: HttpErrorResponse) => {
@@ -42,5 +59,25 @@ export class DashboardComponent implements OnInit {
   /** Color del balance: verde si el mes termina con saldo positivo, coral si no. */
   get claseBalance(): string {
     return (this.resumen?.balanceMes ?? 0) >= 0 ? 'positivo' : 'negativo';
+  }
+
+  get totalGastos(): number {
+    return this.gastos.reduce((suma, g) => suma + g.total, 0);
+  }
+
+  /** Largo de la barra: proporcional a la categoría con más gasto (la mayor ocupa el 100 %). */
+  anchoBarra(gasto: GastoCategoria): number {
+    const maximo = this.gastos[0]?.total ?? 0;
+    return maximo > 0 ? (gasto.total / maximo) * 100 : 0;
+  }
+
+  /** Parte del gasto total del mes que representa la categoría. */
+  participacion(gasto: GastoCategoria): number {
+    return this.totalGastos > 0 ? (gasto.total / this.totalGastos) * 100 : 0;
+  }
+
+  /** Ancho de la barra de un presupuesto, limitado a 100 %. */
+  anchoPresupuesto(consumo: number): number {
+    return Math.min(100, consumo);
   }
 }

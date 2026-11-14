@@ -1,13 +1,27 @@
 <app-navegacion />
 
 <main class="pagina">
-  <header>
-    <span class="marca">Finanzas</span>
-    <h1>Movimientos</h1>
-    <p>Registra ingresos y gastos. Los saldos se actualizan al instante.</p>
+  <header class="encabezado">
+    <div>
+      <span class="marca">Finanzas</span>
+      <h1>Movimientos</h1>
+      <p>Registra ingresos y gastos. Los saldos se actualizan al instante.</p>
+    </div>
+    <div class="encabezado-acciones">
+      <button
+        type="button"
+        class="btn-secundario"
+        [disabled]="transacciones.length === 0"
+        (click)="exportar()"
+        title="Descarga los movimientos del listado (respeta los filtros aplicados)"
+      >
+        Exportar CSV
+      </button>
+      <button type="button" class="btn-accion" (click)="abrirModal()">+ Nuevo movimiento</button>
+    </div>
   </header>
 
-  @if (error) {
+  @if (error && !modalAbierto) {
     <div [class.alert-conexion]="errorConexion" class="alert-error" role="alert">
       {{ error }}
       @if (errorConexion) {
@@ -41,163 +55,166 @@
     }
   </section>
 
-  <div class="grid">
-    <section class="tarjeta">
-      <h2>Nuevo movimiento</h2>
+  <section class="tarjeta">
+    <h2>{{ filtrosActivos ? 'Resultados de la búsqueda' : 'Historial reciente' }}</h2>
 
-      <form [formGroup]="form" (ngSubmit)="registrar()" novalidate>
-        <fieldset class="campo">
-          <legend>Tipo</legend>
-          <div class="segmentos">
-            @for (tipo of tipos; track tipo.valor) {
-              <label class="segmento" [class.activo]="form.controls.tipo.value === tipo.valor">
-                <input type="radio" formControlName="tipo" [value]="tipo.valor" />
-                {{ tipo.etiqueta }}
-              </label>
-            }
-          </div>
-        </fieldset>
+    <!-- Panel de búsqueda con filtros avanzados (Persona 3) -->
+    <form
+      class="panel-filtros"
+      role="search"
+      aria-label="Filtros de búsqueda de movimientos"
+      [formGroup]="filtrosForm"
+      (ngSubmit)="buscar()"
+      novalidate
+    >
+      <div class="campo">
+        <label for="filtro-desde">Desde</label>
+        <input id="filtro-desde" type="date" formControlName="desde" aria-describedby="ayuda-filtros" />
+      </div>
 
-        <div class="campo" [class.invalido]="campoInvalido(form.controls.billeteraId)">
-          <label for="billetera">Billetera</label>
-          <select id="billetera" formControlName="billeteraId">
-            <option [ngValue]="null" disabled>Selecciona una billetera</option>
-            @for (billetera of billeteras; track billetera.id) {
-              <option [ngValue]="billetera.id">{{ billetera.nombre }} ({{ billetera.divisa }})</option>
-            }
-          </select>
-          @if (form.controls.tipo.value === 'GASTO' && saldoSeleccionado !== null) {
-            <small class="ayuda">Saldo disponible: {{ saldoSeleccionado | number: '1.2-2' }}</small>
+      <div class="campo">
+        <label for="filtro-hasta">Hasta</label>
+        <input id="filtro-hasta" type="date" formControlName="hasta" />
+      </div>
+
+      <div class="campo">
+        <label for="filtro-categoria">Categoría</label>
+        <select id="filtro-categoria" formControlName="categoriaId">
+          <option [ngValue]="null">Todas</option>
+          @for (categoria of categorias; track categoria.id) {
+            <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
           }
-          @if (campoInvalido(form.controls.billeteraId)) {
-            <small>Elige una billetera.</small>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label for="filtro-tipo">Tipo</label>
+        <select id="filtro-tipo" formControlName="tipo">
+          <option value="">Todos</option>
+          <option value="INGRESO">Ingreso</option>
+          <option value="GASTO">Gasto</option>
+        </select>
+      </div>
+
+      <div class="acciones-filtros">
+        <button type="submit" class="btn-accion" [disabled]="cargando">Buscar</button>
+        <button type="button" class="btn-secundario" (click)="limpiar()" [disabled]="cargando">Limpiar</button>
+      </div>
+      <small id="ayuda-filtros" class="ayuda">Los filtros se combinan entre sí. Puedes dejar campos vacíos.</small>
+    </form>
+
+    @if (cargando) {
+      <p class="estado">Cargando movimientos...</p>
+    } @else if (sinResultados) {
+      <p class="estado" role="status">No hay movimientos con esos filtros.</p>
+    } @else {
+      <ul class="lista">
+        @for (t of recientes; track t.id) {
+          <li class="item">
+            <span class="item-tipo" [class.ingreso]="t.tipo === 'INGRESO'" aria-hidden="true">
+              {{ t.tipo === 'INGRESO' ? '↑' : '↓' }}
+            </span>
+            <div class="item-info">
+              <span class="item-titulo">{{ t.descripcion || t.categoriaNombre }}</span>
+              <span class="item-meta">{{ t.fecha | date: 'dd/MM/yyyy' }} · {{ t.billeteraNombre }} · {{ t.categoriaNombre }}</span>
+            </div>
+            <div class="acciones-item">
+              <span class="monto" [class.ingreso]="t.tipo === 'INGRESO'">
+                {{ t.tipo === 'INGRESO' ? '+' : '−' }}{{ t.monto | number: '1.2-2' }}
+              </span>
+              <button
+                type="button"
+                class="anular"
+                [disabled]="anulandoId === t.id"
+                (click)="anular(t)"
+                [attr.aria-label]="'Anular movimiento de ' + t.monto"
+              >
+                {{ anulandoId === t.id ? '...' : 'Anular' }}
+              </button>
+            </div>
+          </li>
+        } @empty {
+          @if (!filtrosActivos) {
+            <li class="estado">Aún no hay movimientos registrados.</li>
           }
-        </div>
-
-        <div class="campo" [class.invalido]="campoInvalido(form.controls.categoriaId)">
-          <label for="categoria">Categoría</label>
-          <select id="categoria" formControlName="categoriaId">
-            <option [ngValue]="null" disabled>Selecciona una categoría</option>
-            @for (categoria of categoriasDelTipo; track categoria.id) {
-              <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
-            }
-          </select>
-          @if (categoriasDelTipo.length === 0) {
-            <small class="ayuda">No tienes categorías de este tipo. Créalas en Categorías.</small>
-          }
-          @if (campoInvalido(form.controls.categoriaId)) {
-            <small>Elige una categoría.</small>
-          }
-        </div>
-
-        <div class="fila">
-          <div class="campo" [class.invalido]="campoInvalido(form.controls.monto)">
-            <label for="monto">Monto</label>
-            <input id="monto" type="number" min="0.01" step="0.01" formControlName="monto" />
-            @if (campoInvalido(form.controls.monto)) {
-              <small>El monto debe ser mayor que 0.</small>
-            }
-          </div>
-
-          <div class="campo">
-            <label for="fecha">Fecha</label>
-            <input id="fecha" type="date" formControlName="fecha" />
-          </div>
-        </div>
-
-        <div class="campo">
-          <label for="descripcion">Descripción (opcional)</label>
-          <input id="descripcion" type="text" maxlength="255" formControlName="descripcion" placeholder="Ej. Almuerzo" />
-        </div>
-
-        <button type="submit" class="btn-primary" [disabled]="guardando">
-          {{ guardando ? 'Guardando...' : 'Registrar movimiento' }}
-        </button>
-      </form>
-    </section>
-
-    <section class="tarjeta">
-      <h2>Historial reciente</h2>
-
-      <!-- Panel de búsqueda con filtros avanzados (Persona 3) -->
-      <form
-        class="panel-filtros"
-        role="search"
-        aria-label="Filtros de búsqueda de movimientos"
-        [formGroup]="filtrosForm"
-        (ngSubmit)="buscar()"
-        novalidate
-      >
-        <div class="campo">
-          <label for="filtro-desde">Desde</label>
-          <input id="filtro-desde" type="date" formControlName="desde" aria-describedby="ayuda-filtros" />
-        </div>
-
-        <div class="campo">
-          <label for="filtro-hasta">Hasta</label>
-          <input id="filtro-hasta" type="date" formControlName="hasta" />
-        </div>
-
-        <div class="campo">
-          <label for="filtro-categoria">Categoría</label>
-          <select id="filtro-categoria" formControlName="categoriaId">
-            <option [ngValue]="null">Todas</option>
-            @for (categoria of categorias; track categoria.id) {
-              <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="campo">
-          <label for="filtro-tipo">Tipo</label>
-          <select id="filtro-tipo" formControlName="tipo">
-            <option value="">Todos</option>
-            <option value="INGRESO">Ingreso</option>
-            <option value="GASTO">Gasto</option>
-          </select>
-        </div>
-
-        <div class="acciones-filtros">
-          <button type="submit" class="btn-primary" [disabled]="cargando">Buscar</button>
-          <button type="button" class="btn-secundario" (click)="limpiar()" [disabled]="cargando">Limpiar</button>
-        </div>
-        <small id="ayuda-filtros" class="ayuda">Los filtros se combinan entre sí. Puedes dejar campos vacíos.</small>
-      </form>
-
-      @if (cargando) {
-        <p class="estado">Cargando movimientos...</p>
-      } @else if (sinResultados) {
-        <p class="estado" role="status">No hay movimientos con esos filtros.</p>
-      } @else {
-        <ul class="lista">
-          @for (t of recientes; track t.id) {
-            <li class="item">
-              <div class="item-info">
-                <span class="item-titulo">{{ t.descripcion || t.categoriaNombre }}</span>
-                <span class="item-meta">{{ t.fecha | date: 'dd/MM/yyyy' }} · {{ t.billeteraNombre }} · {{ t.categoriaNombre }}</span>
-              </div>
-              <div class="acciones-item">
-                <span class="monto" [class.ingreso]="t.tipo === 'INGRESO'">
-                  {{ t.tipo === 'INGRESO' ? '+' : '−' }}{{ t.monto | number: '1.2-2' }}
-                </span>
-                <button
-                  type="button"
-                  class="anular"
-                  [disabled]="anulandoId === t.id"
-                  (click)="anular(t)"
-                  [attr.aria-label]="'Anular movimiento de ' + t.monto"
-                >
-                  {{ anulandoId === t.id ? '...' : 'Anular' }}
-                </button>
-              </div>
-            </li>
-          } @empty {
-            @if (!filtrosActivos) {
-              <li class="estado">Aún no hay movimientos registrados.</li>
-            }
-          }
-        </ul>
-      }
-    </section>
-  </div>
+        }
+      </ul>
+    }
+  </section>
 </main>
+
+<app-modal titulo="Nuevo movimiento" [abierto]="modalAbierto" (cerrar)="cerrarModal()">
+  @if (error) {
+    <p class="modal-error" role="alert">{{ error }}</p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="registrar()" novalidate>
+    <fieldset class="campo">
+      <legend>Tipo</legend>
+      <div class="segmentos">
+        @for (tipo of tipos; track tipo.valor) {
+          <label class="segmento" [class.activo]="form.controls.tipo.value === tipo.valor">
+            <input type="radio" formControlName="tipo" [value]="tipo.valor" />
+            {{ tipo.etiqueta }}
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    <div class="campo" [class.invalido]="campoInvalido(form.controls.billeteraId)">
+      <label for="billetera">Billetera</label>
+      <select id="billetera" formControlName="billeteraId">
+        <option [ngValue]="null" disabled>Selecciona una billetera</option>
+        @for (billetera of billeteras; track billetera.id) {
+          <option [ngValue]="billetera.id">{{ billetera.nombre }} ({{ billetera.divisa }})</option>
+        }
+      </select>
+      @if (form.controls.tipo.value === 'GASTO' && saldoSeleccionado !== null) {
+        <small class="ayuda">Saldo disponible: {{ saldoSeleccionado | number: '1.2-2' }}</small>
+      }
+      @if (campoInvalido(form.controls.billeteraId)) {
+        <small>Elige una billetera.</small>
+      }
+    </div>
+
+    <div class="campo" [class.invalido]="campoInvalido(form.controls.categoriaId)">
+      <label for="categoria">Categoría</label>
+      <select id="categoria" formControlName="categoriaId">
+        <option [ngValue]="null" disabled>Selecciona una categoría</option>
+        @for (categoria of categoriasDelTipo; track categoria.id) {
+          <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+        }
+      </select>
+      @if (categoriasDelTipo.length === 0) {
+        <small class="ayuda">No tienes categorías de este tipo. Créalas en Categorías.</small>
+      }
+      @if (campoInvalido(form.controls.categoriaId)) {
+        <small>Elige una categoría.</small>
+      }
+    </div>
+
+    <div class="fila">
+      <div class="campo" [class.invalido]="campoInvalido(form.controls.monto)">
+        <label for="monto">Monto</label>
+        <input id="monto" type="number" min="0.01" step="0.01" formControlName="monto" />
+        @if (campoInvalido(form.controls.monto)) {
+          <small>El monto debe ser mayor que 0.</small>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="fecha">Fecha</label>
+        <input id="fecha" type="date" formControlName="fecha" />
+      </div>
+    </div>
+
+    <div class="campo">
+      <label for="descripcion">Descripción (opcional)</label>
+      <input id="descripcion" type="text" maxlength="255" formControlName="descripcion" placeholder="Ej. Almuerzo" />
+    </div>
+
+    <button type="submit" class="btn-primary" [disabled]="guardando">
+      {{ guardando ? 'Guardando...' : 'Registrar movimiento' }}
+    </button>
+  </form>
+</app-modal>

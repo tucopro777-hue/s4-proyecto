@@ -11,14 +11,27 @@ export interface DashboardResumen {
   presupuestosExcedidos: number;
 }
 
+/** Gasto del mes en una categoría (GastoCategoriaResponse). */
+export interface GastoCategoria {
+  categoriaId: number;
+  categoriaNombre: string;
+  color: string;
+  total: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   private readonly http = inject(HttpClient);
 
-  private readonly apiUrl = 'http://localhost:8080/api/dashboard/resumen';
+  private readonly apiUrl = 'http://localhost:8080/api/dashboard';
 
   obtenerResumen(): Observable<DashboardResumen> {
-    return this.http.get<DashboardResumen>(this.apiUrl);
+    return this.http.get<DashboardResumen>(`${this.apiUrl}/resumen`);
+  }
+
+  /** Gasto del mes en curso agrupado por categoría, de mayor a menor. */
+  gastosPorCategoria(): Observable<GastoCategoria[]> {
+    return this.http.get<GastoCategoria[]>(`${this.apiUrl}/gastos-por-categoria`);
   }
 }
 

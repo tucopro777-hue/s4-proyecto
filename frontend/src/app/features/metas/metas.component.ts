@@ -3,6 +3,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { Billetera, BilleteraService, mensajeErrorBilletera } from '../billeteras/billetera.service';
 import { MetaAhorro, MetaAhorroRequest, MetaAhorroService, mensajeErrorMeta } from './meta.service';
 
@@ -15,7 +16,7 @@ function nombreNoVacio(control: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-metas',
   standalone: true,
-  imports: [ReactiveFormsModule, NavegacionComponent, DecimalPipe, DatePipe],
+  imports: [ReactiveFormsModule, NavegacionComponent, ModalComponent, DecimalPipe, DatePipe],
   templateUrl: './metas.component.html',
   styleUrl: './metas.component.scss',
 })
@@ -56,6 +57,20 @@ export class MetasComponent implements OnInit {
     automatico: [false],
     porcentaje: [null as number | null],
   });
+
+  /** Controla la ventana emergente del formulario de alta. */
+  modalAbierto = false;
+
+  abrirModal(): void {
+    this.error = null;
+    this.exito = null;
+    this.modalAbierto = true;
+  }
+
+  cerrarModal(): void {
+    this.modalAbierto = false;
+    this.error = null;
+  }
 
   ngOnInit(): void {
     this.cargarMetas();
@@ -143,6 +158,7 @@ export class MetasComponent implements OnInit {
       .subscribe({
         next: () => {
           this.guardando = false;
+          this.modalAbierto = false;
           this.exito = 'Meta creada correctamente.';
           this.form.reset({ nombre: '', montoObjetivo: null, fechaLimite: '', automatico: false, porcentaje: null });
           this.cargarMetas();

@@ -9,6 +9,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { Billetera, BilleteraService, mensajeErrorBilletera } from './billetera.service';
 
 /** Rechaza nombres vacíos o formados solo por espacios. */
@@ -20,7 +21,7 @@ function nombreNoVacio(control: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-billeteras',
   standalone: true,
-  imports: [ReactiveFormsModule, NavegacionComponent, DecimalPipe],
+  imports: [ReactiveFormsModule, NavegacionComponent, ModalComponent, DecimalPipe],
   templateUrl: './billeteras.component.html',
   styleUrl: './billeteras.component.scss',
 })
@@ -50,6 +51,20 @@ export class BilleteraComponent implements OnInit {
     divisa: ['BOB', [Validators.required, Validators.pattern(/^[A-Z]{3}$/)]],
   });
 
+  /** Controla la ventana emergente del formulario de alta. */
+  modalAbierto = false;
+
+  abrirModal(): void {
+    this.error = null;
+    this.exito = null;
+    this.modalAbierto = true;
+  }
+
+  cerrarModal(): void {
+    this.modalAbierto = false;
+    this.error = null;
+  }
+
   ngOnInit(): void {
     this.cargarBilleteras();
   }
@@ -70,6 +85,7 @@ export class BilleteraComponent implements OnInit {
       .subscribe({
         next: () => {
           this.guardando = false;
+          this.modalAbierto = false;
           this.exito = 'Billetera registrada correctamente.';
           this.form.reset({ nombre: '', saldoInicial: 0, divisa: 'BOB' });
           this.cargarBilleteras();
