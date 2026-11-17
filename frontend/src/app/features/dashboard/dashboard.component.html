@@ -1,4 +1,4 @@
-<app-navegacion />
+﻿<app-navegacion />
 
 <main class="dashboard-page">
   <header class="dashboard-header">
@@ -19,25 +19,25 @@
     <section class="kpi-grid">
       <article class="kpi">
         <span class="kpi-etiqueta">Saldo total</span>
-        <strong class="kpi-valor">{{ resumen.saldoTotal | number: '1.2-2' }}</strong>
-        <span class="kpi-detalle">Suma de billeteras activas</span>
+        <strong class="kpi-valor">{{ resumen.saldoTotal | number: '1.2-2' }} <small>{{ resumen.divisa }}</small></strong>
+        <span class="kpi-detalle">Billeteras activas de la misma moneda</span>
       </article>
 
       <article class="kpi kpi-ingreso">
         <span class="kpi-etiqueta">Ingresos del mes</span>
-        <strong class="kpi-valor">{{ resumen.ingresosMes | number: '1.2-2' }}</strong>
+        <strong class="kpi-valor">{{ resumen.ingresosMes | number: '1.2-2' }} <small>{{ resumen.divisa }}</small></strong>
         <span class="kpi-detalle">Movimientos de ingreso</span>
       </article>
 
       <article class="kpi kpi-gasto">
         <span class="kpi-etiqueta">Gastos del mes</span>
-        <strong class="kpi-valor">{{ resumen.gastosMes | number: '1.2-2' }}</strong>
+        <strong class="kpi-valor">{{ resumen.gastosMes | number: '1.2-2' }} <small>{{ resumen.divisa }}</small></strong>
         <span class="kpi-detalle">Movimientos de gasto</span>
       </article>
 
       <article class="kpi" [class.kpi-ingreso]="claseBalance === 'positivo'" [class.kpi-gasto]="claseBalance === 'negativo'">
         <span class="kpi-etiqueta">Balance del mes</span>
-        <strong class="kpi-valor">{{ resumen.balanceMes | number: '1.2-2' }}</strong>
+        <strong class="kpi-valor">{{ resumen.balanceMes | number: '1.2-2' }} <small>{{ resumen.divisa }}</small></strong>
         <span class="kpi-detalle">Ingresos menos gastos</span>
       </article>
 
@@ -48,4 +48,5 @@
       </article>
     </section>
   }
+  <app-analisis-financiero />
 </main>

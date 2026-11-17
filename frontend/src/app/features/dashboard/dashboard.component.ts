@@ -3,12 +3,13 @@ import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
 import { DashboardResumen, DashboardService, mensajeErrorDashboard } from './dashboard.service';
+import { AnalisisFinancieroComponent } from './analisis-financiero.component';
 
 /** Panel principal: muestra los indicadores del mes en tarjetas KPI. */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NavegacionComponent, DecimalPipe],
+  imports: [NavegacionComponent, DecimalPipe, AnalisisFinancieroComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })

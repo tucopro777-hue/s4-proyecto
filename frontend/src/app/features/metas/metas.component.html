@@ -156,7 +156,7 @@
                   [attr.aria-label]="'Aporte para ' + meta.nombre"
                 />
                 <button type="button" class="btn-mini neutro" (click)="iniciarEdicion(meta)">Editar</button>
-                <button type="button" class="btn-mini" [disabled]="aportandoId === meta.id" (click)="aportar(meta)">
+                <button type="button" class="btn-mini" [disabled]="aportandoId !== null" (click)="aportar(meta)">
                   {{ aportandoId === meta.id ? '...' : 'Aportar' }}
                 </button>
                 <button type="button" class="btn-mini peligro" [disabled]="eliminandoId === meta.id" (click)="eliminar(meta)">

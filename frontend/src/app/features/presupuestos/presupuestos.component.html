@@ -94,6 +94,8 @@
               <div class="barra" role="progressbar" [attr.aria-valuenow]="p.saldoConsumido" [attr.aria-valuemax]="p.montoLimite">
                 <div class="relleno" [ngClass]="'nivel-' + p.nivel.toLowerCase()" [style.width.%]="porcentaje(p)"></div>
               </div>
+              <p class="estado">{{ p.saldoConsumido > p.montoLimite ? 'Exceso' : 'Disponible' }}:
+                {{ (p.saldoConsumido > p.montoLimite ? p.saldoConsumido - p.montoLimite : p.montoLimite - p.saldoConsumido) | number:'1.2-2' }}</p>
 
               <div class="acciones">
                 <span class="etiqueta" [ngClass]="'nivel-' + p.nivel.toLowerCase()">

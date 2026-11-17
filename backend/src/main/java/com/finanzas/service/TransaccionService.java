@@ -17,11 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-<<<<<<< HEAD
 import java.math.BigDecimal;
-=======
 import java.time.LocalDate;
->>>>>>> 7e3fa49b53a7fccdc404807142721c14f634a5d5
 import java.util.List;
 
 /**

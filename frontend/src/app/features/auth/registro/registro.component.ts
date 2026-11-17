@@ -46,6 +46,7 @@ export class RegistroComponent {
   );
 
   enviar(): void {
+    if (this.cargando) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;

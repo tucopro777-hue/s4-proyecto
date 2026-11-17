@@ -39,7 +39,11 @@ export class TransaccionesComponent implements OnInit {
 
   billeteras: Billetera[] = [];
   categorias: Categoria[] = [];
+  private versionConsulta = 0;
   transacciones: Transaccion[] = [];
+  pagina = 0;
+  readonly porPagina = 20;
+  private movimientoRegistradoId: number | null = null;
   cargando = true;
   guardando = false;
   error: string | null = null;
@@ -54,6 +58,9 @@ export class TransaccionesComponent implements OnInit {
   sinResultados = false;
   /** Indica si hay filtros activos (para distinguir "sin datos" de "sin resultados con filtros"). */
   filtrosActivos = false;
+  readonly mesHistorial = this.fb.nonNullable.control('');
+
+  verMes(): void { this.buscar(); }
 
   /** Formulario independiente del panel de filtros avanzados. */
   readonly filtrosForm = this.fb.nonNullable.group({
@@ -101,10 +108,17 @@ export class TransaccionesComponent implements OnInit {
   }
 
   get recientes(): Transaccion[] {
-    return this.transacciones.slice(0, 20);
+    return this.transacciones.slice(this.pagina * this.porPagina, (this.pagina + 1) * this.porPagina);
+  }
+
+  get totalPaginas(): number { return Math.max(1, Math.ceil(this.transacciones.length / this.porPagina)); }
+
+  cambiarPagina(pagina: number): void {
+    this.pagina = Math.max(0, Math.min(pagina, this.totalPaginas - 1));
   }
 
   registrar(): void {
+    if (this.guardando) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -130,13 +144,20 @@ export class TransaccionesComponent implements OnInit {
           this.guardando = false;
           this.exito = 'Movimiento registrado correctamente.';
           this.alerta = creada.alertaPresupuesto;
+          this.movimientoRegistradoId = creada.id;
+          this.filtrosForm.reset({ desde: '', hasta: '', categoriaId: null, tipo: '' });
+          this.filtrosActivos = false;
+          this.mesHistorial.setValue('');
+          this.sinResultados = false;
+          ++this.versionConsulta;
+          this.exito = 'Movimiento registrado correctamente. Se muestra en el historial sin filtros.';
           // Se conserva la billetera para registrar varios movimientos seguidos
           this.form.reset({
             billeteraId: valores.billeteraId,
             tipo: 'GASTO',
             categoriaId: null,
             monto: null,
-            fecha: hoy(),
+            fecha: valores.fecha,
             descripcion: '',
           });
           this.cargarTodo();
@@ -192,9 +213,9 @@ export class TransaccionesComponent implements OnInit {
         next: ({ billeteras, categorias }) => {
           this.billeteras = billeteras;
           this.categorias = categorias;
-          this.cargando = false;
           // El backend respondió: se oculta cualquier alerta de conexión previa
           this.errorConexion = false;
+          this.cargarTransacciones();
         },
         error: (err: HttpErrorResponse) => {
           this.cargando = false;
@@ -205,6 +226,7 @@ export class TransaccionesComponent implements OnInit {
 
   /** Carga el historial respetando los filtros activos del panel. */
   private cargarTransacciones(): void {
+    const version = ++this.versionConsulta;
     this.cargando = true;
     this.error = null;
 
@@ -216,7 +238,14 @@ export class TransaccionesComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (transacciones) => {
+          if (version !== this.versionConsulta) return;
           this.transacciones = transacciones;
+          if (this.movimientoRegistradoId !== null) {
+            const indice = transacciones.findIndex(t => t.id === this.movimientoRegistradoId);
+            this.pagina = indice >= 0 ? Math.floor(indice / this.porPagina) : 0;
+            this.movimientoRegistradoId = null;
+          }
+          this.cambiarPagina(this.pagina);
           // Lista vacía CON filtros activos: mensaje informativo en pantalla
           this.sinResultados = this.filtrosActivos && transacciones.length === 0;
           this.cargando = false;
@@ -224,6 +253,7 @@ export class TransaccionesComponent implements OnInit {
           this.errorConexion = false;
         },
         error: (err: HttpErrorResponse) => {
+          if (version !== this.versionConsulta) return;
           this.cargando = false;
           this.registrarError(err);
         },
@@ -244,6 +274,19 @@ export class TransaccionesComponent implements OnInit {
 
   /** Aplica los filtros del panel y recarga el historial. */
   buscar(): void {
+    this.pagina = 0;
+    const mes = this.mesHistorial.value;
+    if (mes && !/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) {
+      this.error = 'Selecciona un mes y un a?o completos.';
+      return;
+    }
+    if (mes) {
+      const [anio, numero] = mes.split('-').map(Number);
+      const ultimoDia = new Date(anio, numero, 0).getDate();
+      this.filtrosForm.patchValue({ desde: `${mes}-01`, hasta: `${mes}-${ultimoDia}` });
+    } else {
+      this.filtrosForm.patchValue({ desde: '', hasta: '' });
+    }
     const valores = this.filtrosForm.getRawValue();
     // Solo marca como "filtros activos" si realmente se envió algún criterio
     this.filtrosActivos = Boolean(valores.desde || valores.hasta || valores.categoriaId || valores.tipo);
@@ -252,6 +295,8 @@ export class TransaccionesComponent implements OnInit {
 
   /** Resetea el panel y vuelve al listado general predeterminado. */
   limpiar(): void {
+    this.pagina = 0;
+    this.mesHistorial.setValue('');
     this.filtrosForm.reset({ desde: '', hasta: '', categoriaId: null, tipo: '' });
     this.filtrosActivos = false;
     this.sinResultados = false;

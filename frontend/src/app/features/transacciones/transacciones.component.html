@@ -117,8 +117,7 @@
     </section>
 
     <section class="tarjeta">
-      <h2>Historial reciente</h2>
-
+      <h2>Historial de movimientos</h2>
       <!-- Panel de búsqueda con filtros avanzados (Persona 3) -->
       <form
         class="panel-filtros"
@@ -129,13 +128,8 @@
         novalidate
       >
         <div class="campo">
-          <label for="filtro-desde">Desde</label>
-          <input id="filtro-desde" type="date" formControlName="desde" aria-describedby="ayuda-filtros" />
-        </div>
-
-        <div class="campo">
-          <label for="filtro-hasta">Hasta</label>
-          <input id="filtro-hasta" type="date" formControlName="hasta" />
+          <label for="mes-historial">Mes</label>
+          <input id="mes-historial" type="month" [formControl]="mesHistorial" aria-describedby="ayuda-filtros" />
         </div>
 
         <div class="campo">
@@ -197,6 +191,13 @@
             }
           }
         </ul>
+        @if (transacciones.length > porPagina) {
+          <nav class="acciones-filtros" aria-label="Páginas de movimientos">
+            <button type="button" class="btn-secundario" (click)="cambiarPagina(pagina - 1)" [disabled]="pagina === 0">Anterior</button>
+            <span role="status">Página {{ pagina + 1 }} de {{ totalPaginas }} · {{ transacciones.length }} movimientos</span>
+            <button type="button" class="btn-secundario" (click)="cambiarPagina(pagina + 1)" [disabled]="pagina + 1 >= totalPaginas">Siguiente</button>
+          </nav>
+        }
       }
     </section>
   </div>

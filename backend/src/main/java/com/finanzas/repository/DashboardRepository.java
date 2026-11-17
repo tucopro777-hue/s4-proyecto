@@ -18,17 +18,17 @@ public interface DashboardRepository extends JpaRepository<Billetera, Long> {
 
     /** Suma de los saldos actuales de las billeteras activas del usuario. */
     @Query("select coalesce(sum(b.saldoActual), 0) from Billetera b "
-            + "where b.usuario.id = :usuarioId and b.activa = true")
-    BigDecimal sumarSaldoActivo(@Param("usuarioId") Long usuarioId);
+            + "where b.usuario.id = :usuarioId and b.activa = true and b.divisa = :divisa")
+    BigDecimal sumarSaldoActivo(@Param("usuarioId") Long usuarioId, @Param("divisa") String divisa);
 
     /** Total de movimientos no anulados de un tipo (INGRESO o GASTO) dentro de un rango de fechas. */
     @Query("select coalesce(sum(t.monto), 0) from Transaccion t "
             + "where t.usuario.id = :usuarioId and t.tipo = :tipo and t.anulada = false "
-            + "and t.fecha between :inicio and :fin")
+            + "and t.fecha between :inicio and :fin and t.billetera.divisa = :divisa")
     BigDecimal sumarMovimientosPeriodo(@Param("usuarioId") Long usuarioId,
                                        @Param("tipo") TipoTransaccion tipo,
                                        @Param("inicio") LocalDate inicio,
-                                       @Param("fin") LocalDate fin);
+                                       @Param("fin") LocalDate fin, @Param("divisa") String divisa);
 
     /** Cuenta los presupuestos del mes cuyo consumo ya supera el límite. */
     @Query("select count(p) from Presupuesto p where p.usuario.id = :usuarioId "

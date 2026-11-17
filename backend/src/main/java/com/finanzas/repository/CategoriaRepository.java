@@ -9,6 +9,8 @@ import java.util.Optional;
 
 public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
 
+    List<Categoria> findByUsuarioIdOrderByNombreAsc(Long usuarioId);
+
     List<Categoria> findByUsuarioIdAndActivaTrueOrderByNombreAsc(Long usuarioId);
 
     List<Categoria> findByUsuarioIdAndTipoAndActivaTrueOrderByNombreAsc(Long usuarioId, TipoCategoria tipo);
