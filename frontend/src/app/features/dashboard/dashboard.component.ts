@@ -11,6 +11,7 @@ import {
   DashboardService,
   GastoCategoria,
   ProyeccionFinanciera,
+  VmeResultado,
   mensajeErrorDashboard,
 } from './dashboard.service';
 
@@ -30,6 +31,8 @@ export class DashboardComponent implements OnInit {
   gastos: GastoCategoria[] = [];
   /** Proyección de Markov; si falla, la tarjeta simplemente no se muestra. */
   proyeccion: ProyeccionFinanciera | null = null;
+  /** Valor monetario esperado de cada decisión; si falla, la tarjeta no se muestra. */
+  vme: VmeResultado | null = null;
   cargando = true;
   error: string | null = null;
 
@@ -66,6 +69,11 @@ export class DashboardComponent implements OnInit {
     this.dashboardService.proyeccion().subscribe({
       next: (proyeccion) => (this.proyeccion = proyeccion),
       error: () => (this.proyeccion = null),
+    });
+
+    this.dashboardService.vme().subscribe({
+      next: (vme) => (this.vme = vme),
+      error: () => (this.vme = null),
     });
   }
 
