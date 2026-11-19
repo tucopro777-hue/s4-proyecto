@@ -47,6 +47,7 @@ export class MetasComponent implements OnInit {
     fechaLimite: [''],
     automatico: [false],
     porcentaje: [null as number | null],
+    prioridad: [5 as number | null, [Validators.required, Validators.min(1), Validators.max(10)]],
   });
 
   /** Formulario de edición, reutilizado por la meta que se esté editando. */
@@ -56,6 +57,7 @@ export class MetasComponent implements OnInit {
     fechaLimite: [''],
     automatico: [false],
     porcentaje: [null as number | null],
+    prioridad: [5 as number | null, [Validators.required, Validators.min(1), Validators.max(10)]],
   });
 
   /** Controla la ventana emergente del formulario de alta. */
@@ -85,6 +87,7 @@ export class MetasComponent implements OnInit {
       fechaLimite: meta.fechaLimite ?? '',
       automatico: meta.porcentajeAutomatico !== null,
       porcentaje: meta.porcentajeAutomatico,
+      prioridad: meta.prioridad,
     });
     this.error = null;
     this.exito = null;
@@ -160,7 +163,7 @@ export class MetasComponent implements OnInit {
           this.guardando = false;
           this.modalAbierto = false;
           this.exito = 'Meta creada correctamente.';
-          this.form.reset({ nombre: '', montoObjetivo: null, fechaLimite: '', automatico: false, porcentaje: null });
+          this.form.reset({ nombre: '', montoObjetivo: null, fechaLimite: '', automatico: false, porcentaje: null, prioridad: 5 });
           this.cargarMetas();
         },
         error: (err: HttpErrorResponse) => {
@@ -256,12 +259,14 @@ export class MetasComponent implements OnInit {
     fechaLimite: string;
     automatico: boolean;
     porcentaje: number | null;
+    prioridad: number | null;
   }): MetaAhorroRequest {
     return {
       nombre: valores.nombre.trim(),
       montoObjetivo: Number(valores.montoObjetivo),
       fechaLimite: valores.fechaLimite || null,
       porcentajeAutomatico: valores.automatico ? Number(valores.porcentaje) : null,
+      prioridad: valores.prioridad !== null ? Number(valores.prioridad) : null,
     };
   }
 

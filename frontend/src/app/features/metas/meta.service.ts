@@ -15,6 +15,8 @@ export interface MetaAhorro {
   completada: boolean;
   /** Porcentaje de cada ingreso que se aporta automáticamente; null = desactivado. */
   porcentajeAutomatico: number | null;
+  /** Prioridad de 1 (baja) a 10 (alta) para la asignación inteligente. */
+  prioridad: number;
 }
 
 /** Datos para crear o editar una meta (MetaAhorroRequest). */
@@ -23,6 +25,7 @@ export interface MetaAhorroRequest {
   montoObjetivo: number;
   fechaLimite: string | null;
   porcentajeAutomatico: number | null;
+  prioridad: number | null;
 }
 
 @Injectable({ providedIn: 'root' })

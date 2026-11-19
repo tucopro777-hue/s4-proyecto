@@ -40,6 +40,10 @@
                       <label for="edit-fecha-{{ meta.id }}">Fecha límite</label>
                       <input id="edit-fecha-{{ meta.id }}" type="date" formControlName="fechaLimite" />
                     </div>
+                    <div class="campo">
+                      <label for="edit-prioridad-{{ meta.id }}">Prioridad (1 a 10)</label>
+                      <input id="edit-prioridad-{{ meta.id }}" type="number" min="1" max="10" step="1" formControlName="prioridad" />
+                    </div>
                   </div>
                   <div class="campo campo-check">
                     <label class="check" for="edit-automatico-{{ meta.id }}">
@@ -154,6 +158,12 @@
         <div class="campo">
           <label for="fecha">Fecha límite (opcional)</label>
           <input id="fecha" type="date" formControlName="fechaLimite" />
+        </div>
+
+        <div class="campo">
+          <label for="prioridad">Prioridad (1 a 10)</label>
+          <input id="prioridad" type="number" min="1" max="10" step="1" formControlName="prioridad" />
+          <small>Sirve para la asignación inteligente: mayor número, más importancia.</small>
         </div>
 
         <div class="campo campo-check">

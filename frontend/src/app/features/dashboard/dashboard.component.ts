@@ -1,18 +1,24 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { DecimalPipe, NgClass } from '@angular/common';
+import { DecimalPipe, NgClass, PercentPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
 import { AlertasPresupuestoService } from '../../core/alertas/alertas-presupuesto.service';
 import { etiquetaNivel, porcentajeConsumo } from '../presupuestos/presupuesto.service';
-import { DashboardResumen, DashboardService, GastoCategoria, mensajeErrorDashboard } from './dashboard.service';
+import {
+  DashboardResumen,
+  DashboardService,
+  GastoCategoria,
+  ProyeccionFinanciera,
+  mensajeErrorDashboard,
+} from './dashboard.service';
 
 /** Panel principal: indicadores del mes, gráfica de gastos por categoría y estado de los presupuestos. */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NavegacionComponent, DecimalPipe, NgClass, RouterLink],
+  imports: [NavegacionComponent, DecimalPipe, PercentPipe, NgClass, RouterLink],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
@@ -22,6 +28,8 @@ export class DashboardComponent implements OnInit {
 
   resumen: DashboardResumen | null = null;
   gastos: GastoCategoria[] = [];
+  /** Proyección de Markov; si falla, la tarjeta simplemente no se muestra. */
+  proyeccion: ProyeccionFinanciera | null = null;
   cargando = true;
   error: string | null = null;
 
@@ -54,6 +62,18 @@ export class DashboardComponent implements OnInit {
         this.cargando = false;
       },
     });
+
+    this.dashboardService.proyeccion().subscribe({
+      next: (proyeccion) => (this.proyeccion = proyeccion),
+      error: () => (this.proyeccion = null),
+    });
+  }
+
+  /** Probabilidad de que el próximo mes conserve el estado actual, según la matriz de Markov. */
+  get etiquetaProyeccion(): string {
+    return this.proyeccion?.estadoActual === 'ESTABLE'
+      ? 'de mantener tu estabilidad financiera'
+      : 'de seguir en déficit';
   }
 
   /** Color del balance: verde si el mes termina con saldo positivo, coral si no. */

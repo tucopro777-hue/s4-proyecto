@@ -11,6 +11,22 @@ export interface DashboardResumen {
   presupuestosExcedidos: number;
 }
 
+/** Proyección de Markov del próximo mes (ProyeccionFinancieraResponse). Probabilidades de 0 a 1. */
+export interface ProyeccionFinanciera {
+  datosSuficientes: boolean;
+  mesesAnalizados: number;
+  estadoActual: 'ESTABLE' | 'DEFICIT' | null;
+  probabilidadMantener: number | null;
+  probabilidadEstableSiguiente: number | null;
+  probabilidadDeficitSiguiente: number | null;
+  matriz: {
+    deficitADeficit: number;
+    deficitAEstable: number;
+    estableADeficit: number;
+    estableAEstable: number;
+  } | null;
+}
+
 /** Gasto del mes en una categoría (GastoCategoriaResponse). */
 export interface GastoCategoria {
   categoriaId: number;
@@ -27,6 +43,11 @@ export class DashboardService {
 
   obtenerResumen(): Observable<DashboardResumen> {
     return this.http.get<DashboardResumen>(`${this.apiUrl}/resumen`);
+  }
+
+  /** Probabilidades del próximo mes según la cadena de Markov sobre los últimos 6 meses. */
+  proyeccion(): Observable<ProyeccionFinanciera> {
+    return this.http.get<ProyeccionFinanciera>(`${this.apiUrl}/proyeccion`);
   }
 
   /** Gasto del mes en curso agrupado por categoría, de mayor a menor. */

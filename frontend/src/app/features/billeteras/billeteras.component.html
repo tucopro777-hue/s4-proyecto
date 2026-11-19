@@ -6,7 +6,17 @@
       <span class="auth-marca">Finanzas</span>
       <h1>Mis billeteras</h1>
     </div>
-    <button type="button" class="btn-accion" (click)="abrirModal()">+ Nueva billetera</button>
+    <div class="billeteras-acciones">
+      <button
+        type="button"
+        class="btn-accion"
+        (click)="asignacionInteligente()"
+        [disabled]="calculandoAsignacion || cargando || billeteras.length === 0"
+      >
+        {{ calculandoAsignacion ? 'Calculando...' : 'Asignación Inteligente' }}
+      </button>
+      <button type="button" class="btn-accion" (click)="abrirModal()">+ Nueva billetera</button>
+    </div>
   </header>
 
   @if (error && !modalAbierto) {
