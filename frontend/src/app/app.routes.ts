@@ -38,6 +38,12 @@ export const routes: Routes = [
       import('./features/transacciones/transacciones.component').then((m) => m.TransaccionesComponent),
   },
   {
+    path: 'estadisticas',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/estadisticas/estadisticas.component').then((m) => m.EstadisticasComponent),
+  },
+  {
     path: 'presupuestos',
     canActivate: [authGuard],
     loadComponent: () =>
