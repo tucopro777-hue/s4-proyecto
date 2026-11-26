@@ -70,7 +70,8 @@ public class MetaAhorroService {
                 request.nombre().trim(),
                 request.montoObjetivo(),
                 request.fechaLimite(),
-                request.porcentajeAutomatico()
+                request.porcentajeAutomatico(),
+                request.prioridad() != null ? request.prioridad() : 5
         );
         metaAhorroRepository.save(meta);
 
@@ -84,8 +85,9 @@ public class MetaAhorroService {
         MetaAhorro meta = buscarDeUsuario(usuario, metaId);
         validarPorcentaje(usuario, metaId, request.porcentajeAutomatico());
 
+        int prioridad = request.prioridad() != null ? request.prioridad() : meta.getPrioridad();
         meta.actualizar(request.nombre().trim(), request.montoObjetivo(), request.fechaLimite(),
-                request.porcentajeAutomatico());
+                request.porcentajeAutomatico(), prioridad);
 
         return toResponse(meta);
     }
@@ -234,7 +236,8 @@ public class MetaAhorroService {
                 meta.getFechaLimite(),
                 porcentaje,
                 meta.estaCompletada(),
-                meta.getPorcentajeAutomatico()
+                meta.getPorcentajeAutomatico(),
+                meta.getPrioridad()
         );
     }
 }

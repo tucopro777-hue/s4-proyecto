@@ -7,6 +7,9 @@ import { forkJoin } from 'rxjs';
 import { Billetera, BilleteraService } from '../billeteras/billetera.service';
 import { Categoria, CategoriaService } from '../categorias/categoria.service';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { AlertasPresupuestoService } from '../../core/alertas/alertas-presupuesto.service';
+import { exportarCsv } from '../../shared/utils/csv';
 import {
   AlertaPresupuesto,
   FiltrosTransaccion,
@@ -26,7 +29,7 @@ function hoy(): string {
 @Component({
   selector: 'app-transacciones',
   standalone: true,
-  imports: [ReactiveFormsModule, NavegacionComponent, DecimalPipe, DatePipe],
+  imports: [ReactiveFormsModule, NavegacionComponent, ModalComponent, DecimalPipe, DatePipe],
   templateUrl: './transacciones.component.html',
   styleUrl: './transacciones.component.scss',
 })
@@ -35,6 +38,7 @@ export class TransaccionesComponent implements OnInit {
   private readonly transaccionService = inject(TransaccionService);
   private readonly billeteraService = inject(BilleteraService);
   private readonly categoriaService = inject(CategoriaService);
+  private readonly alertasPresupuesto = inject(AlertasPresupuestoService);
   private readonly destroyRef = inject(DestroyRef);
 
   billeteras: Billetera[] = [];
@@ -53,6 +57,8 @@ export class TransaccionesComponent implements OnInit {
   /** Aviso de presupuesto del último gasto registrado; no bloquea la operación. */
   alerta: AlertaPresupuesto | null = null;
   anulandoId: number | null = null;
+  /** Controla la ventana emergente de "Nuevo movimiento". */
+  modalAbierto = false;
 
   /** Mensaje informativo cuando el filtro no devuelve resultados. */
   sinResultados = false;
@@ -107,6 +113,7 @@ export class TransaccionesComponent implements OnInit {
     return this.billeteras.find((b) => b.id === id)?.saldoActual ?? null;
   }
 
+  /** Sin filtros se muestran los 20 últimos; con filtros, todos los que coinciden. */
   get recientes(): Transaccion[] {
     return this.transacciones.slice(this.pagina * this.porPagina, (this.pagina + 1) * this.porPagina);
   }
@@ -142,6 +149,7 @@ export class TransaccionesComponent implements OnInit {
       .subscribe({
         next: (creada) => {
           this.guardando = false;
+          this.modalAbierto = false;
           this.exito = 'Movimiento registrado correctamente.';
           this.alerta = creada.alertaPresupuesto;
           this.movimientoRegistradoId = creada.id;
@@ -161,6 +169,8 @@ export class TransaccionesComponent implements OnInit {
             descripcion: '',
           });
           this.cargarTodo();
+          // La campanita refleja al instante si el gasto dejó un presupuesto al límite
+          this.alertasPresupuesto.refrescar();
         },
         error: (err: HttpErrorResponse) => {
           this.guardando = false;
@@ -188,6 +198,7 @@ export class TransaccionesComponent implements OnInit {
         this.anulandoId = null;
         this.exito = 'Movimiento anulado. Saldo y presupuesto actualizados.';
         this.cargarTodo();
+        this.alertasPresupuesto.refrescar();
       },
       error: (err: HttpErrorResponse) => {
         this.anulandoId = null;
@@ -202,8 +213,6 @@ export class TransaccionesComponent implements OnInit {
 
   /** Recarga saldos, categorías e historial para que todas las vistas reflejen el movimiento. */
   private cargarTodo(): void {
-    this.cargando = true;
-    this.error = null;
     forkJoin({
       billeteras: this.billeteraService.listar(),
       categorias: this.categoriaService.listar(),
@@ -221,14 +230,15 @@ export class TransaccionesComponent implements OnInit {
           this.cargando = false;
           this.registrarError(err);
         },
+        error: (err: HttpErrorResponse) => this.registrarError(err),
       });
+    this.cargarTransacciones();
   }
 
   /** Carga el historial respetando los filtros activos del panel. */
   private cargarTransacciones(): void {
     const version = ++this.versionConsulta;
     this.cargando = true;
-    this.error = null;
 
     const peticion = this.filtrosActivos
       ? this.transaccionService.listarConFiltros(this.filtrosForm.value as FiltrosTransaccion)
@@ -250,6 +260,9 @@ export class TransaccionesComponent implements OnInit {
           this.sinResultados = this.filtrosActivos && transacciones.length === 0;
           this.cargando = false;
           // El backend respondió: la alerta de conexión se oculta automáticamente
+          if (this.errorConexion) {
+            this.error = null;
+          }
           this.errorConexion = false;
         },
         error: (err: HttpErrorResponse) => {

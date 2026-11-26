@@ -1,22 +1,49 @@
 <app-navegacion />
 
 <main class="pagina">
-  <header>
-    <span class="marca">Finanzas</span>
-    <h1>Traspasos</h1>
-    <p>Mueve dinero entre tus billeteras. Es atómico: o se aplica completo, o no se aplica nada.</p>
+  <header class="encabezado">
+    <div>
+      <span class="marca">Finanzas</span>
+      <h1>Traspasos</h1>
+      <p>Mueve dinero entre tus billeteras. Es atómico: o se aplica completo, o no se aplica nada.</p>
+    </div>
+    <button type="button" class="btn-accion" (click)="abrirModal()">+ Nuevo traspaso</button>
   </header>
 
-  @if (error) {
+  @if (error && !modalAbierto) {
     <div class="alert-error" role="alert">{{ error }}</div>
   }
   @if (exito) {
     <div class="alert-exito" role="status">{{ exito }}</div>
   }
 
-  <div class="grid">
     <section class="tarjeta">
-      <h2>Nuevo traspaso</h2>
+      <h2>Traspasos recientes</h2>
+
+      @if (cargando) {
+        <p class="estado">Cargando traspasos...</p>
+      } @else {
+        <ul class="lista">
+          @for (t of traspasos; track t.id) {
+            <li class="item">
+              <div class="info">
+                <span class="titulo">{{ t.billeteraOrigenNombre }} → {{ t.billeteraDestinoNombre }}</span>
+                <span class="meta">{{ t.fecha | date: 'dd/MM/yyyy' }}@if (t.descripcion) { · {{ t.descripcion }} }</span>
+              </div>
+              <span class="monto">{{ t.monto | number: '1.2-2' }}</span>
+            </li>
+          } @empty {
+            <li class="estado">Aún no has hecho traspasos.</li>
+          }
+        </ul>
+      }
+    </section>
+</main>
+
+<app-modal titulo="Nuevo traspaso" [abierto]="modalAbierto" (cerrar)="cerrarModal()">
+  @if (error) {
+    <p class="modal-error" role="alert">{{ error }}</p>
+  }
 
       @if (!cargando && billeteras.length < 2) {
         <p class="estado">Necesitas al menos dos billeteras activas para hacer un traspaso.</p>
@@ -82,28 +109,5 @@
           </button>
         </form>
       }
-    </section>
-
-    <section class="tarjeta">
-      <h2>Traspasos recientes</h2>
-
-      @if (cargando) {
-        <p class="estado">Cargando traspasos...</p>
-      } @else {
-        <ul class="lista">
-          @for (t of traspasos; track t.id) {
-            <li class="item">
-              <div class="info">
-                <span class="titulo">{{ t.billeteraOrigenNombre }} → {{ t.billeteraDestinoNombre }}</span>
-                <span class="meta">{{ t.fecha | date: 'dd/MM/yyyy' }}@if (t.descripcion) { · {{ t.descripcion }} }</span>
-              </div>
-              <span class="monto">{{ t.monto | number: '1.2-2' }}</span>
-            </li>
-          } @empty {
-            <li class="estado">Aún no has hecho traspasos.</li>
-          }
-        </ul>
-      }
-    </section>
-  </div>
-</main>
+    
+</app-modal>

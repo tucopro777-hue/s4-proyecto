@@ -9,7 +9,9 @@ import {
   Validators,
 } from '@angular/forms';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { Billetera, BilleteraService, mensajeErrorBilletera } from './billetera.service';
+import { AsignacionInteligente, AsignacionService, mensajeErrorAsignacion } from '../asignacion/asignacion.service';
 
 /** Rechaza nombres vacíos o formados solo por espacios. */
 function nombreNoVacio(control: AbstractControl): ValidationErrors | null {
@@ -20,16 +22,18 @@ function nombreNoVacio(control: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-billeteras',
   standalone: true,
-  imports: [ReactiveFormsModule, NavegacionComponent, DecimalPipe],
+  imports: [ReactiveFormsModule, NavegacionComponent, ModalComponent, DecimalPipe],
   templateUrl: './billeteras.component.html',
   styleUrl: './billeteras.component.scss',
 })
 export class BilleteraComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly billeteraService = inject(BilleteraService);
+  private readonly asignacionService = inject(AsignacionService);
 
   billeteras: Billetera[] = [];
   cargando = true;
+  calculandoAsignacion = false;
   guardando = false;
   desactivandoId: number | null = null;
   /** Billetera cuya desactivación espera la contraseña del usuario. */
@@ -50,8 +54,71 @@ export class BilleteraComponent implements OnInit {
     divisa: ['BOB', [Validators.required, Validators.pattern(/^[A-Z]{3}$/)]],
   });
 
+  /** Controla la ventana emergente del formulario de alta. */
+  modalAbierto = false;
+
+  abrirModal(): void {
+    this.error = null;
+    this.exito = null;
+    this.modalAbierto = true;
+  }
+
+  cerrarModal(): void {
+    this.modalAbierto = false;
+    this.error = null;
+  }
+
   ngOnInit(): void {
     this.cargarBilleteras();
+  }
+
+  /** Dinero disponible: suma de los saldos de las billeteras activas. */
+  get dineroDisponible(): number {
+    return this.billeteras
+      .filter((b) => b.activa)
+      .reduce((suma, b) => suma + b.saldoActual, 0);
+  }
+
+  /** Pide la asignación inteligente del dinero disponible y la muestra en una alerta. */
+  asignacionInteligente(): void {
+    const disponible = this.dineroDisponible;
+    this.calculandoAsignacion = true;
+    this.error = null;
+    this.exito = null;
+
+    this.asignacionService.recomendar(disponible).subscribe({
+      next: (resultado) => {
+        this.calculandoAsignacion = false;
+        window.alert(this.textoAsignacion(disponible, resultado));
+      },
+      error: (err: HttpErrorResponse) => {
+        this.calculandoAsignacion = false;
+        this.error = mensajeErrorAsignacion(err);
+      },
+    });
+  }
+
+  private textoAsignacion(disponible: number, resultado: AsignacionInteligente): string {
+    const formato = (valor: number) => valor.toFixed(2);
+
+    if (resultado.recomendadas.length === 0) {
+      return `Con ${formato(disponible)} no hay metas pendientes que cubrir. ` +
+        'Crea una meta de ahorro en la sección Metas para recibir una sugerencia.';
+    }
+
+    const lineas = resultado.recomendadas.map(
+      (m) => `• Aporta ${formato(m.costo)} a «${m.nombre}» (prioridad ${m.prioridad})`,
+    );
+
+    return [
+      `Asignación inteligente para ${formato(disponible)}:`,
+      '',
+      ...lineas,
+      '',
+      `Total sugerido: ${formato(resultado.totalAsignado)}`,
+      `Puntos de prioridad: ${resultado.puntosPrioridad}`,
+      `Sobrante: ${formato(resultado.sobrante)}`,
+    ].join('\n');
   }
 
   registrar(): void {
@@ -71,6 +138,7 @@ export class BilleteraComponent implements OnInit {
       .subscribe({
         next: () => {
           this.guardando = false;
+          this.modalAbierto = false;
           this.exito = 'Billetera registrada correctamente.';
           this.form.reset({ nombre: '', saldoInicial: 0, divisa: 'BOB' });
           this.cargarBilleteras();

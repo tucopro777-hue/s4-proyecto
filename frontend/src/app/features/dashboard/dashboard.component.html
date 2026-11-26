@@ -6,7 +6,7 @@
       <span class="marca">Finanzas</span>
       <h1>Panel principal</h1>
     </div>
-    <p class="subtitulo">Resumen del mes actual</p>
+    <p class="subtitulo">Resumen de {{ mesActual }}</p>
   </header>
 
   @if (error) {
@@ -47,6 +47,124 @@
         <span class="kpi-detalle">Categorías que superaron su límite</span>
       </article>
     </section>
+
+    @if (proyeccion; as p) {
+      <section class="panel" aria-labelledby="titulo-proyeccion">
+        <header class="panel-cabecera">
+          <h2 id="titulo-proyeccion">Proyección del próximo mes</h2>
+          <span class="panel-nota">Cadena de Markov · últimos 6 meses</span>
+        </header>
+
+        @if (p.datosSuficientes) {
+          <strong class="kpi-valor">{{ p.probabilidadMantener | percent: '1.0-0' }}</strong>
+          <p>Tienes un {{ p.probabilidadMantener | percent: '1.0-0' }} {{ etiquetaProyeccion }} el próximo mes.</p>
+          <small class="kpi-detalle">
+            Desde estado estable: {{ p.matriz?.estableAEstable | percent: '1.0-0' }} seguir estable ·
+            {{ p.matriz?.estableADeficit | percent: '1.0-0' }} caer en déficit.
+            Desde déficit: {{ p.matriz?.deficitAEstable | percent: '1.0-0' }} pasar a estable.
+          </small>
+        } @else {
+          <p class="estado-vacio">
+            Se necesitan al menos dos meses con movimientos para proyectar el próximo mes.
+          </p>
+        }
+      </section>
+    }
+
+    @if (vme; as v) {
+      @if (v.datosSuficientes) {
+        <section class="panel" aria-labelledby="titulo-vme">
+          <header class="panel-cabecera">
+            <h2 id="titulo-vme">Valor monetario esperado</h2>
+            <span class="panel-nota">Mejor decisión: {{ v.mejorAlternativa }}</span>
+          </header>
+
+          <ul class="grafica">
+            @for (alternativa of v.alternativas; track alternativa.nombre) {
+              <li class="grafica-fila">
+                <span class="grafica-nombre">{{ alternativa.nombre }}</span>
+                <span class="grafica-valor">{{ alternativa.vme | number: '1.2-2' }}</span>
+                <span class="grafica-detalle" role="tooltip">
+                  Pago estable {{ alternativa.pagoEstable | number: '1.2-2' }} ·
+                  pago en déficit {{ alternativa.pagoDeficit | number: '1.2-2' }}
+                </span>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    }
+
+    <div class="paneles">
+      <section class="panel" aria-labelledby="titulo-gastos">
+        <header class="panel-cabecera">
+          <h2 id="titulo-gastos">Gastos por categoría</h2>
+          <span class="panel-nota">Total {{ totalGastos | number: '1.2-2' }}</span>
+        </header>
+
+        @if (gastos.length === 0) {
+          <p class="estado-vacio">Aún no hay gastos este mes.</p>
+        } @else {
+          <ul class="grafica">
+            @for (gasto of gastos; track gasto.categoriaId) {
+              <li class="grafica-fila">
+                <span class="grafica-nombre">
+                  <span class="grafica-muestra" [style.background]="gasto.color" aria-hidden="true"></span>
+                  {{ gasto.categoriaNombre }}
+                </span>
+                <span class="grafica-pista">
+                  <span class="grafica-barra" [style.width.%]="anchoBarra(gasto)" [style.background]="gasto.color"></span>
+                </span>
+                <span class="grafica-valor">
+                  {{ gasto.total | number: '1.2-2' }}
+                  <small>{{ participacion(gasto) | number: '1.0-0' }} %</small>
+                </span>
+                <span class="grafica-detalle" role="tooltip">
+                  <strong>{{ gasto.categoriaNombre }}</strong>
+                  {{ gasto.total | number: '1.2-2' }} · {{ participacion(gasto) | number: '1.0-1' }} % del gasto del mes
+                </span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="panel" aria-labelledby="titulo-presupuestos">
+        <header class="panel-cabecera">
+          <h2 id="titulo-presupuestos">Presupuestos del mes</h2>
+          <a routerLink="/presupuestos" class="panel-enlace">Gestionar</a>
+        </header>
+
+        @for (p of presupuestos(); track p.id) {
+          <article class="presupuesto">
+            <div class="presupuesto-cabecera">
+              <strong>{{ p.categoriaNombre }}</strong>
+              <span class="estado-nivel" [ngClass]="'nivel-' + p.nivel.toLowerCase()">{{ etiqueta(p.nivel) }}</span>
+            </div>
+            <div
+              class="progreso"
+              role="progressbar"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              [attr.aria-valuenow]="anchoPresupuesto(porcentaje(p)) | number: '1.0-0'"
+              [attr.aria-label]="'Consumo del presupuesto de ' + p.categoriaNombre"
+            >
+              <div
+                class="progreso-relleno"
+                [ngClass]="'nivel-' + p.nivel.toLowerCase()"
+                [style.width.%]="anchoPresupuesto(porcentaje(p))"
+              ></div>
+            </div>
+            <span class="presupuesto-cifras">
+              {{ p.saldoConsumido | number: '1.2-2' }} de {{ p.montoLimite | number: '1.2-2' }}
+              · {{ porcentaje(p) | number: '1.0-0' }} %
+            </span>
+          </article>
+        } @empty {
+          <p class="estado-vacio">No hay presupuestos definidos para este mes.</p>
+        }
+      </section>
+    </div>
   }
   <app-analisis-financiero />
 </main>

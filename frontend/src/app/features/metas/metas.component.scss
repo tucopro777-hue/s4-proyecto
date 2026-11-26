@@ -230,3 +230,28 @@ header {
     grid-template-columns: 1fr;
   }
 }
+
+/* Metas como tarjetas en cuadrícula */
+.lista.tarjetas {
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+}
+
+.meta.tarjeta-dato {
+  display: block;
+  padding: 20px;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.estado-vacio {
+  grid-column: 1 / -1;
+}
+
+.acciones {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 420px) {
+  .lista.tarjetas {
+    grid-template-columns: 1fr;
+  }
+}

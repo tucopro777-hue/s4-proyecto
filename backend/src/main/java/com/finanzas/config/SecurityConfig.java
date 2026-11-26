@@ -56,6 +56,7 @@ public class SecurityConfig { // Define reglas de acceso
         configuracion.setAllowedOrigins(List.of("http://localhost:4200")); // Solo permite el frontend local
         configuracion.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")); // Métodos permitidos
         configuracion.setAllowedHeaders(List.of("Authorization", "Content-Type")); // Cabeceras permitidas
+        configuracion.setExposedHeaders(List.of("Retry-After")); // Permite al frontend leer el tiempo de bloqueo
 
         UrlBasedCorsConfigurationSource origen = new UrlBasedCorsConfigurationSource(); // Fuente por URL
         origen.registerCorsConfiguration("/**", configuracion); // Aplica CORS a todas las rutas

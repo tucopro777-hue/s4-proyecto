@@ -1,0 +1,31 @@
+# Base de datos del sistema de finanzas personales.
+#
+#   Encender:   docker compose up -d
+#   Apagar:     docker compose down          (los datos se conservan)
+#   Consola:    docker exec -it finanzas-db psql -U postgres -d finanzas
+#
+# Los datos viven en el volumen "finanzas_pgdata": sobreviven a reinicios y a
+# "docker compose down". Solo se borran con "docker compose down -v".
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: finanzas-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: finanzas
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      # Puerto 5433 en el equipo: el 5432 suele estar ocupado por un PostgreSQL instalado en Windows
+      - "5433:5432"
+    volumes:
+      - finanzas_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d finanzas"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  finanzas_pgdata:
+    name: finanzas_pgdata

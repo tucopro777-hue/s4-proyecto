@@ -7,7 +7,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import com.finanzas.dto.GastoCategoriaResponse;
+
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Consultas de solo lectura para el panel principal. Viven en su propio repositorio para no
@@ -29,6 +32,16 @@ public interface DashboardRepository extends JpaRepository<Billetera, Long> {
                                        @Param("tipo") TipoTransaccion tipo,
                                        @Param("inicio") LocalDate inicio,
                                        @Param("fin") LocalDate fin, @Param("divisa") String divisa);
+
+    /** Gasto no anulado del periodo agrupado por categoría, de mayor a menor. */
+    @Query("select new com.finanzas.dto.GastoCategoriaResponse(c.id, c.nombre, c.color, sum(t.monto)) "
+            + "from Transaccion t join t.categoria c "
+            + "where t.usuario.id = :usuarioId and t.tipo = com.finanzas.model.TipoTransaccion.GASTO "
+            + "and t.anulada = false and t.fecha between :inicio and :fin "
+            + "group by c.id, c.nombre, c.color order by sum(t.monto) desc")
+    List<GastoCategoriaResponse> gastosPorCategoria(@Param("usuarioId") Long usuarioId,
+                                                    @Param("inicio") LocalDate inicio,
+                                                    @Param("fin") LocalDate fin);
 
     /** Cuenta los presupuestos del mes cuyo consumo ya supera el límite. */
     @Query("select count(p) from Presupuesto p where p.usuario.id = :usuarioId "

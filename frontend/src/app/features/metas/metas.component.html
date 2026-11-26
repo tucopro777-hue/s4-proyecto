@@ -1,74 +1,30 @@
 <app-navegacion />
 
 <main class="pagina">
-  <header>
-    <span class="marca">Finanzas</span>
-    <h1>Metas de ahorro</h1>
-    <p>Suma aportes a tus metas. Las metas solo cambian cuando tú aportas.</p>
+  <header class="encabezado">
+    <div>
+      <span class="marca">Finanzas</span>
+      <h1>Metas de ahorro</h1>
+      <p>Suma aportes a tus metas. Las metas solo cambian cuando tú aportas.</p>
+    </div>
+    <button type="button" class="btn-accion" (click)="abrirModal()">+ Nueva meta</button>
   </header>
 
-  @if (error) {
+  @if (error && !modalAbierto) {
     <div class="alert-error" role="alert">{{ error }}</div>
   }
   @if (exito) {
     <div class="alert-exito" role="status">{{ exito }}</div>
   }
 
-  <div class="grid">
-    <section class="tarjeta">
-      <h2>Nueva meta</h2>
-
-      <form [formGroup]="form" (ngSubmit)="crear()" novalidate>
-        <div class="campo" [class.invalido]="campoInvalido(form.controls.nombre)">
-          <label for="nombre">Nombre</label>
-          <input id="nombre" type="text" maxlength="100" formControlName="nombre" placeholder="Ej. Viaje a Lima" />
-          @if (campoInvalido(form.controls.nombre)) {
-            <small>El nombre es obligatorio.</small>
-          }
-        </div>
-
-        <div class="campo" [class.invalido]="campoInvalido(form.controls.montoObjetivo)">
-          <label for="objetivo">Monto objetivo</label>
-          <input id="objetivo" type="number" min="0.01" step="0.01" formControlName="montoObjetivo" />
-          @if (campoInvalido(form.controls.montoObjetivo)) {
-            <small>El objetivo debe ser mayor que 0.</small>
-          }
-        </div>
-
-        <div class="campo">
-          <label for="fecha">Fecha límite (opcional)</label>
-          <input id="fecha" type="date" formControlName="fechaLimite" />
-        </div>
-
-        <div class="campo campo-check">
-          <label class="check">
-            <input type="checkbox" formControlName="automatico" />
-            Aportar automáticamente un % de cada ingreso
-          </label>
-        </div>
-
-        @if (form.controls.automatico.value) {
-          <div class="campo">
-            <label for="porcentaje">Porcentaje de cada ingreso (%)</label>
-            <input id="porcentaje" type="number" min="0.01" max="100" step="0.01" formControlName="porcentaje" />
-          </div>
-        }
-
-        <button type="submit" class="btn-primary" [disabled]="guardando">
-          {{ guardando ? 'Guardando...' : 'Crear meta' }}
-        </button>
-      </form>
-    </section>
-
-    <section class="tarjeta">
-      <h2>Mis metas</h2>
+    <section class="metas">
 
       @if (cargando) {
         <p class="estado">Cargando metas...</p>
       } @else {
-        <ul class="lista">
+        <ul class="lista tarjetas">
           @for (meta of metas; track meta.id) {
-            <li class="meta">
+            <li class="meta tarjeta-dato">
               @if (editandoId === meta.id) {
                 <form [formGroup]="formEdicion" (ngSubmit)="guardarEdicion(meta)" novalidate>
                   <div class="campo" [class.invalido]="campoEdicionInvalido(formEdicion.controls.nombre)">
@@ -83,6 +39,10 @@
                     <div class="campo">
                       <label for="edit-fecha-{{ meta.id }}">Fecha límite</label>
                       <input id="edit-fecha-{{ meta.id }}" type="date" formControlName="fechaLimite" />
+                    </div>
+                    <div class="campo">
+                      <label for="edit-prioridad-{{ meta.id }}">Prioridad (1 a 10)</label>
+                      <input id="edit-prioridad-{{ meta.id }}" type="number" min="1" max="10" step="1" formControlName="prioridad" />
                     </div>
                   </div>
                   <div class="campo campo-check">
@@ -166,10 +126,63 @@
               }
             </li>
           } @empty {
-            <li class="estado">Aún no tienes metas. Crea la primera.</li>
+            <li class="estado-vacio">Aún no tienes metas. Crea la primera con «Nueva meta».</li>
           }
         </ul>
       }
     </section>
-  </div>
 </main>
+
+<app-modal titulo="Nueva meta" [abierto]="modalAbierto" (cerrar)="cerrarModal()">
+  @if (error) {
+    <p class="modal-error" role="alert">{{ error }}</p>
+  }
+
+      <form [formGroup]="form" (ngSubmit)="crear()" novalidate>
+        <div class="campo" [class.invalido]="campoInvalido(form.controls.nombre)">
+          <label for="nombre">Nombre</label>
+          <input id="nombre" type="text" maxlength="100" formControlName="nombre" placeholder="Ej. Viaje a Lima" />
+          @if (campoInvalido(form.controls.nombre)) {
+            <small>El nombre es obligatorio.</small>
+          }
+        </div>
+
+        <div class="campo" [class.invalido]="campoInvalido(form.controls.montoObjetivo)">
+          <label for="objetivo">Monto objetivo</label>
+          <input id="objetivo" type="number" min="0.01" step="0.01" formControlName="montoObjetivo" />
+          @if (campoInvalido(form.controls.montoObjetivo)) {
+            <small>El objetivo debe ser mayor que 0.</small>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="fecha">Fecha límite (opcional)</label>
+          <input id="fecha" type="date" formControlName="fechaLimite" />
+        </div>
+
+        <div class="campo">
+          <label for="prioridad">Prioridad (1 a 10)</label>
+          <input id="prioridad" type="number" min="1" max="10" step="1" formControlName="prioridad" />
+          <small>Sirve para la asignación inteligente: mayor número, más importancia.</small>
+        </div>
+
+        <div class="campo campo-check">
+          <label class="check">
+            <input type="checkbox" formControlName="automatico" />
+            Aportar automáticamente un % de cada ingreso
+          </label>
+        </div>
+
+        @if (form.controls.automatico.value) {
+          <div class="campo">
+            <label for="porcentaje">Porcentaje de cada ingreso (%)</label>
+            <input id="porcentaje" type="number" min="0.01" max="100" step="0.01" formControlName="porcentaje" />
+          </div>
+        }
+
+        <button type="submit" class="btn-primary" [disabled]="guardando">
+          {{ guardando ? 'Guardando...' : 'Crear meta' }}
+        </button>
+      </form>
+    
+</app-modal>

@@ -183,9 +183,10 @@ header {
   margin-bottom: 16px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio);
-  background: var(--color-primario-suave);
+  background: var(--color-fondo);
 
   .campo {
+    margin-bottom: 0;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -198,27 +199,13 @@ header {
       border: 1px solid var(--color-borde);
       border-radius: var(--radio);
       background: var(--color-superficie);
+      color: var(--color-texto);
     }
   }
 
   .acciones-filtros {
     display: flex;
     gap: 8px;
-  }
-}
-
-.btn-secundario {
-  padding: 8px 14px;
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio);
-  background: var(--color-superficie);
-  color: var(--color-texto);
-  font-weight: 600;
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    border-color: var(--color-primario);
-    color: var(--color-primario);
   }
 }
 
@@ -242,4 +229,31 @@ header {
       color: var(--color-superficie);
     }
   }
+}
+
+/* Indicador de tipo de movimiento: flecha arriba (ingreso) o abajo (gasto) */
+.item-tipo {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-error-fondo);
+  color: var(--color-error);
+  font-weight: 700;
+
+  &.ingreso {
+    background: var(--color-exito-fondo);
+    color: var(--color-exito);
+  }
+}
+
+.item-info {
+  flex: 1;
+}
+
+.monto {
+  font-variant-numeric: tabular-nums;
 }
