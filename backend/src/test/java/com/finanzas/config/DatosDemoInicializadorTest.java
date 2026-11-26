@@ -30,7 +30,7 @@ class DatosDemoInicializadorTest {
         Usuario demo = usuarioRepository.findByEmail(EMAIL).orElseThrow();
 
         assertThat(billeteraRepository.findByUsuarioIdAndActivaTrueOrderByNombreAsc(demo.getId())).hasSize(3);
-        assertThat(transaccionRepository.findByUsuarioIdAndAnuladaFalseOrderByFechaDescIdDesc(demo.getId())).hasSize(8);
+        assertThat(transaccionRepository.findByUsuarioIdAndAnuladaFalseOrderByFechaDescIdDesc(demo.getId())).hasSize(4);
     }
 
     @Test

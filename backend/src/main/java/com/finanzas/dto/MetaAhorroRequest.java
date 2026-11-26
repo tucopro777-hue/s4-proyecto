@@ -3,8 +3,6 @@ package com.finanzas.dto; // DTOs de entrada y salida
 import jakarta.validation.constraints.DecimalMax; // Valor máximo permitido
 import jakarta.validation.constraints.DecimalMin; // Valor mínimo permitido
 import jakarta.validation.constraints.Digits; // Máximo de dígitos
-import jakarta.validation.constraints.Max; // Entero máximo
-import jakarta.validation.constraints.Min; // Entero mínimo
 import jakarta.validation.constraints.NotBlank; // No puede estar vacío
 import jakarta.validation.constraints.NotNull; // No puede ser nulo
 import jakarta.validation.constraints.Size; // Longitud máxima
@@ -17,14 +15,6 @@ public record MetaAhorroRequest( // Datos para crear o editar una meta
         @NotNull @DecimalMin("0.01") @Digits(integer = 10, fraction = 2) BigDecimal montoObjetivo, // Objetivo, mínimo 0.01
         LocalDate fechaLimite, // Fecha límite opcional
         // Porcentaje de cada ingreso que se aporta a la meta; null = desactivado
-        @DecimalMin("0.01") @DecimalMax("100") @Digits(integer = 3, fraction = 2) BigDecimal porcentajeAutomatico,
-        // Prioridad 1 a 10 para la asignación inteligente; null = se conserva la actual (5 al crear)
-        @Min(1) @Max(10) Integer prioridad
+        @DecimalMin("0.01") @DecimalMax("100") @Digits(integer = 3, fraction = 2) BigDecimal porcentajeAutomatico
 ) {
-
-    /** Constructor sin prioridad: mantiene los llamados existentes. */
-    public MetaAhorroRequest(String nombre, BigDecimal montoObjetivo, LocalDate fechaLimite,
-                             BigDecimal porcentajeAutomatico) {
-        this(nombre, montoObjetivo, fechaLimite, porcentajeAutomatico, null);
-    }
 }

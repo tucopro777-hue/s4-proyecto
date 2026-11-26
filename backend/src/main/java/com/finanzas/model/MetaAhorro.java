@@ -48,10 +48,6 @@ public class MetaAhorro {
     @Column(precision = 5, scale = 2)
     private BigDecimal porcentajeAutomatico;
 
-    /** Prioridad 1 (baja) a 10 (alta) que usa la asignación inteligente del dinero disponible. */
-    @Column(nullable = false)
-    private int prioridad = 5;
-
     /** Requerido por JPA. */
     protected MetaAhorro() {
     }
@@ -65,19 +61,12 @@ public class MetaAhorro {
         this.porcentajeAutomatico = porcentajeAutomatico;
     }
 
-    public MetaAhorro(Usuario usuario, String nombre, BigDecimal montoObjetivo, LocalDate fechaLimite,
-                      BigDecimal porcentajeAutomatico, int prioridad) {
-        this(usuario, nombre, montoObjetivo, fechaLimite, porcentajeAutomatico);
-        this.prioridad = prioridad;
-    }
-
     public void actualizar(String nombre, BigDecimal montoObjetivo, LocalDate fechaLimite,
-                           BigDecimal porcentajeAutomatico, int prioridad) {
+                           BigDecimal porcentajeAutomatico) {
         this.nombre = nombre;
         this.montoObjetivo = montoObjetivo;
         this.fechaLimite = fechaLimite;
         this.porcentajeAutomatico = porcentajeAutomatico;
-        this.prioridad = prioridad;
     }
 
     public void aportar(BigDecimal monto) {
@@ -95,10 +84,6 @@ public class MetaAhorro {
 
     public BigDecimal getPorcentajeAutomatico() {
         return porcentajeAutomatico;
-    }
-
-    public int getPrioridad() {
-        return prioridad;
     }
 
     public Long getId() {

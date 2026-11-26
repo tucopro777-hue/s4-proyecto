@@ -15,8 +15,6 @@ export interface MetaAhorro {
   completada: boolean;
   /** Porcentaje de cada ingreso que se aporta automáticamente; null = desactivado. */
   porcentajeAutomatico: number | null;
-  /** Prioridad de 1 (baja) a 10 (alta) para la asignación inteligente. */
-  prioridad: number;
 }
 
 /** Datos para crear o editar una meta (MetaAhorroRequest). */
@@ -25,7 +23,6 @@ export interface MetaAhorroRequest {
   montoObjetivo: number;
   fechaLimite: string | null;
   porcentajeAutomatico: number | null;
-  prioridad: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -60,6 +57,10 @@ export class MetaAhorroService {
 
 /** Traduce un error HTTP del backend a un mensaje para el usuario. */
 export function mensajeErrorMeta(error: HttpErrorResponse): string {
+  if ([400, 403, 404, 409, 422].includes(error.status)) {
+    const mensaje = typeof error.error === 'string' ? error.error : error.error?.message;
+    if (typeof mensaje === 'string' && mensaje.trim()) return mensaje;
+  }
   switch (error.status) {
     case 0:
       return 'No se pudo conectar con el servidor. Verifica que el backend esté activo.';

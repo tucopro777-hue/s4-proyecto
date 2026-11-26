@@ -7,10 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
-import com.finanzas.dto.GastoCategoriaResponse;
-
 import java.time.LocalDate;
-import java.util.List;
 
 /**
  * Consultas de solo lectura para el panel principal. Viven en su propio repositorio para no
@@ -21,27 +18,17 @@ public interface DashboardRepository extends JpaRepository<Billetera, Long> {
 
     /** Suma de los saldos actuales de las billeteras activas del usuario. */
     @Query("select coalesce(sum(b.saldoActual), 0) from Billetera b "
-            + "where b.usuario.id = :usuarioId and b.activa = true")
-    BigDecimal sumarSaldoActivo(@Param("usuarioId") Long usuarioId);
+            + "where b.usuario.id = :usuarioId and b.activa = true and b.divisa = :divisa")
+    BigDecimal sumarSaldoActivo(@Param("usuarioId") Long usuarioId, @Param("divisa") String divisa);
 
     /** Total de movimientos no anulados de un tipo (INGRESO o GASTO) dentro de un rango de fechas. */
     @Query("select coalesce(sum(t.monto), 0) from Transaccion t "
             + "where t.usuario.id = :usuarioId and t.tipo = :tipo and t.anulada = false "
-            + "and t.fecha between :inicio and :fin")
+            + "and t.fecha between :inicio and :fin and t.billetera.divisa = :divisa")
     BigDecimal sumarMovimientosPeriodo(@Param("usuarioId") Long usuarioId,
                                        @Param("tipo") TipoTransaccion tipo,
                                        @Param("inicio") LocalDate inicio,
-                                       @Param("fin") LocalDate fin);
-
-    /** Gasto no anulado del periodo agrupado por categoría, de mayor a menor. */
-    @Query("select new com.finanzas.dto.GastoCategoriaResponse(c.id, c.nombre, c.color, sum(t.monto)) "
-            + "from Transaccion t join t.categoria c "
-            + "where t.usuario.id = :usuarioId and t.tipo = com.finanzas.model.TipoTransaccion.GASTO "
-            + "and t.anulada = false and t.fecha between :inicio and :fin "
-            + "group by c.id, c.nombre, c.color order by sum(t.monto) desc")
-    List<GastoCategoriaResponse> gastosPorCategoria(@Param("usuarioId") Long usuarioId,
-                                                    @Param("inicio") LocalDate inicio,
-                                                    @Param("fin") LocalDate fin);
+                                       @Param("fin") LocalDate fin, @Param("divisa") String divisa);
 
     /** Cuenta los presupuestos del mes cuyo consumo ya supera el límite. */
     @Query("select count(p) from Presupuesto p where p.usuario.id = :usuarioId "

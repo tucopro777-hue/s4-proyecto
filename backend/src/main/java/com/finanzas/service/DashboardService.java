@@ -1,7 +1,6 @@
 package com.finanzas.service;
 
 import com.finanzas.dto.DashboardResponse;
-import com.finanzas.dto.GastoCategoriaResponse;
 import com.finanzas.model.TipoTransaccion;
 import com.finanzas.model.Usuario;
 import com.finanzas.repository.DashboardRepository;
@@ -14,7 +13,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.List;
 
 /**
  * Calcula los indicadores del panel principal del usuario autenticado.
@@ -34,6 +32,12 @@ public class DashboardService {
 
     @Transactional(readOnly = true)
     public DashboardResponse obtenerResumen(String emailUsuario) {
+        return obtenerResumen(emailUsuario, "BOB");
+    }
+
+    @Transactional(readOnly = true)
+    public DashboardResponse obtenerResumen(String emailUsuario, String divisa) {
+        if (divisa == null || !divisa.matches("[A-Z]{3}")) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Divisa inválida");
         Usuario usuario = buscarUsuario(emailUsuario);
 
         // Todos los importes del mes se calculan sobre el mes en curso
@@ -41,24 +45,16 @@ public class DashboardService {
         LocalDate inicio = mes.atDay(1);
         LocalDate fin = mes.atEndOfMonth();
 
-        BigDecimal saldoTotal = dashboardRepository.sumarSaldoActivo(usuario.getId());
+        BigDecimal saldoTotal = dashboardRepository.sumarSaldoActivo(usuario.getId(), divisa);
         BigDecimal ingresosMes = dashboardRepository.sumarMovimientosPeriodo(
-                usuario.getId(), TipoTransaccion.INGRESO, inicio, fin);
+                usuario.getId(), TipoTransaccion.INGRESO, inicio, fin, divisa);
         BigDecimal gastosMes = dashboardRepository.sumarMovimientosPeriodo(
-                usuario.getId(), TipoTransaccion.GASTO, inicio, fin);
+                usuario.getId(), TipoTransaccion.GASTO, inicio, fin, divisa);
         BigDecimal balanceMes = ingresosMes.subtract(gastosMes);
         Long presupuestosExcedidos = dashboardRepository.contarExcedidos(
                 usuario.getId(), mes.getYear(), mes.getMonthValue());
 
-        return new DashboardResponse(saldoTotal, ingresosMes, gastosMes, balanceMes, presupuestosExcedidos);
-    }
-
-    /** Distribución del gasto del mes en curso por categoría (para la gráfica del panel). */
-    @Transactional(readOnly = true)
-    public List<GastoCategoriaResponse> gastosPorCategoria(String emailUsuario) {
-        Usuario usuario = buscarUsuario(emailUsuario);
-        YearMonth mes = YearMonth.now();
-        return dashboardRepository.gastosPorCategoria(usuario.getId(), mes.atDay(1), mes.atEndOfMonth());
+        return new DashboardResponse(saldoTotal, ingresosMes, gastosMes, balanceMes, presupuestosExcedidos, divisa);
     }
 
     private Usuario buscarUsuario(String email) {

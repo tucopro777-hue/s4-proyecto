@@ -67,19 +67,7 @@ export function mensajeErrorAuth(error: HttpErrorResponse): string {
       return 'Email o contraseña incorrectos.';
     case 409:
       return 'Ese email ya está registrado.';
-    case 423:
-      return mensajeCuentaBloqueada(error);
     default:
       return 'Ocurrió un error inesperado. Inténtalo de nuevo.';
   }
-}
-
-/** La cuenta bloqueada llega con Retry-After (segundos) que indica cuánto falta para reintentar. */
-function mensajeCuentaBloqueada(error: HttpErrorResponse): string {
-  const segundos = Number(error.headers?.get('Retry-After'));
-  if (!Number.isFinite(segundos) || segundos <= 0) {
-    return 'Demasiados intentos fallidos. Inténtalo de nuevo más tarde.';
-  }
-  const minutos = Math.max(1, Math.ceil(segundos / 60));
-  return `Demasiados intentos fallidos. Tu cuenta está bloqueada temporalmente; inténtalo de nuevo en ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}.`;
 }

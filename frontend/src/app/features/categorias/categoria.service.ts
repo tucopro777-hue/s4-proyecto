@@ -79,7 +79,10 @@ export function mensajeErrorCategoria(error: HttpErrorResponse): string {
     case 404:
       return 'La categoría ya no existe.';
     case 409:
-      return 'Ya tienes una categoría con ese nombre.';
+      if (typeof error.error === 'string' && error.error.trim()) return error.error;
+      return typeof error.error?.message === 'string'
+        ? error.error.message
+        : 'Ya tienes una categoría con ese nombre o uno muy parecido.';
     default:
       return 'Ocurrió un error inesperado. Inténtalo de nuevo.';
   }

@@ -1,0 +1,57 @@
+﻿<section class="analisis" aria-label="Tu situación y tus opciones" [attr.aria-busy]="cargando">
+  @if (error) { <p class="alert-error" role="alert">{{ error }}</p> }
+  @if (cargando) { <p role="status">Cargando…</p> }
+  <div class="paneles">
+    <article class="panel" aria-labelledby="futuro-titulo">
+      <h3 id="futuro-titulo">Tu futuro financiero</h3>
+      @if (markov; as m) {
+        @if (m.estadoActual; as mes) {
+          <p class="situacion" [class.positiva]="mes.estado === 'ESTABLE'" [class.negativa]="mes.estado === 'DEFICIT'">{{ mes.estado === 'ESTABLE' ? 'Tus ingresos cubren tus gastos' : 'Estás gastando más de lo que ganas' }}</p>
+        }
+        @if (!m.estadoActual) { <p class="nota">Sin movimientos del mes actual: situación desconocida.</p> }
+        @if (m.probabilidades; as p) {
+          <div class="proximo-mes" aria-label="Probabilidades del próximo mes">
+            <h4>Tu próximo mes <small>· {{ divisa }}</small></h4>
+            <div class="probabilidades">
+              <p><span>Estabilidad</span><strong class="positiva">{{ p.estable * 100 | number:'1.1-1' }} %</strong></p>
+              <p><span>Déficit</span><strong class="negativa">{{ p.deficit * 100 | number:'1.1-1' }} %</strong></p>
+            </div>
+          </div>
+          <p class="nota">El mes actual es provisional. Estimamos el próximo mes con los cambios observados entre tus meses cerrados. {{ consejo }}</p>
+        } @else { <p class="nota sin-historial">Necesitamos más historial para conocer cómo podrían estar tus finanzas</p> }
+      } @else if (!cargando && !error) { <p class="nota">Necesitamos más historial para conocer cómo podrían estar tus finanzas</p> }
+    </article>
+    <article class="panel" aria-labelledby="opciones-titulo">
+      <h3 id="opciones-titulo">¿Qué hacer con tu dinero?</h3>
+      <p class="saldo"><span>Saldo disponible registrado · {{ divisa }}</span><strong>@if (disponible !== null) { {{ disponible | number:'1.2-2' }} } @else { — }</strong></p>
+      <p class="nota">SIMULACIÓN: no hay tasas reales disponibles. Compararemos Guardar, Ahorrar e Invertir con resultados ficticios y las probabilidades de tu historial.</p>
+      <label for="monto-evaluar">¿Cuánto quieres evaluar?</label>
+      <div class="evaluar">
+        <input id="monto-evaluar" type="number" min="0.01" step="0.01" [max]="disponible ?? 0" placeholder="Monto" [(ngModel)]="montoEvaluar" (ngModelChange)="invalidar()" [disabled]="cargando || disponible === null" [attr.aria-invalid]="montoEvaluar !== null && !montoValido" aria-describedby="estado-evaluacion">
+        <button class="primario" type="button" (click)="evaluarMonto()" [disabled]="!montoValido || !markov?.probabilidades || evaluando || cargando">{{ evaluando ? 'Evaluando…' : 'Evaluar' }}</button>
+      </div>
+      <ul class="opciones-simples" aria-label="Opciones de dinero">
+        @for (opcion of alternativas; track opcion.nombre) {
+          <li [class.mejor-opcion]="mejoresNombres.includes(nombreOpcion(opcion.nombre))">{{ nombreOpcion(opcion.nombre) }}</li>
+        }
+      </ul>
+      <div id="estado-evaluacion" aria-live="polite">
+        @if (mejores.length) {
+          <div class="recomendacion"><span class="etiqueta">SIMULACIÓN · resultados monetarios ficticios</span>
+            @for (a of mejores; track a.nombre) { <p class="resultado">{{ nombreOpcion(a.nombre) }} · {{ a.vme | number:'1.2-2' }} {{ divisa }}</p> }
+            <p class="nota">Monto evaluado: {{ vme!.disponible | number:'1.2-2' }} {{ divisa }}. {{ vme!.explicacion }}</p>
+            <p class="nota">{{ explicacionRecomendacion }}</p>
+            <div class="comparacion-vme" aria-label="Comparación de resultados simulados">
+              <p class="nota">Monto final esperado · SIMULACIÓN</p>
+              @for (opcion of vme!.alternativas; track opcion.nombre) {
+                <p>{{ nombreOpcion(opcion.nombre) }}: {{ divisa === 'BOB' ? 'Bs' : divisa }} {{ opcion.vme | number:'1.2-2' }}</p>
+              }
+              <p class="nota">Los importes se muestran con dos decimales. La mejor opción se elige antes de redondearlos; pueden parecer iguales.</p>
+            </div>
+          </div>
+        } @else if (!cargando && !error) { <p class="nota">Indica un monto y pulsa Evaluar. Necesitamos saldo e historial suficiente para comparar.</p> }
+      </div>
+    </article>
+  </div>
+
+</section>

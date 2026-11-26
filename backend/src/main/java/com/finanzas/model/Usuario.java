@@ -31,15 +31,6 @@ public class Usuario {
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaRegistro;
 
-    /** Fallos de login consecutivos desde el último acceso correcto o desbloqueo. */
-    @Column(name = "intentos_fallidos", nullable = false)
-    private int intentosFallidos;
-
-    /** Si está en el futuro, la cuenta no admite login hasta esa fecha. */
-    @Column(name = "bloqueado_hasta")
-    private LocalDateTime bloqueadoHasta;
-
-
     /** Requerido por JPA. */
     protected Usuario() {
     }
@@ -88,40 +79,4 @@ public class Usuario {
     public LocalDateTime getFechaRegistro() {
         return fechaRegistro;
     }
-
-    public int getIntentosFallidos() {
-        return intentosFallidos;
-    }
-
-    public LocalDateTime getBloqueadoHasta() {
-        return bloqueadoHasta;
-    }
-
-    public void setBloqueadoHasta(LocalDateTime bloqueadoHasta) {
-        this.bloqueadoHasta = bloqueadoHasta;
-    }
-
-
-
-
-    /** true si la cuenta está bloqueada en este momento. */
-    public boolean estaBloqueada(LocalDateTime ahora) {
-        return bloqueadoHasta != null && bloqueadoHasta.isAfter(ahora);
-    }
-
-    /** Registra un fallo de login; al alcanzar el máximo bloquea la cuenta y reinicia el contador. */
-    public void registrarFalloLogin(LocalDateTime ahora, int maxIntentos, int minutosBloqueo) {
-        intentosFallidos++;
-        if (intentosFallidos >= maxIntentos) {
-            bloqueadoHasta = ahora.plusMinutes(minutosBloqueo);
-            intentosFallidos = 0;
-        }
-    }
-
-    /** Tras un login correcto o un cambio de contraseña, limpia bloqueo y contadores. */
-    public void limpiarBloqueo() {
-        intentosFallidos = 0;
-        bloqueadoHasta = null;
-    }
-
 }

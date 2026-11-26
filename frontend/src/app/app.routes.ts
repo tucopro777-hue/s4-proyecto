@@ -20,6 +20,11 @@ export const routes: Routes = [
       import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
   },
   {
+    path: 'explicacion-metodos',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/dashboard/explicacion-metodos.component').then(m => m.ExplicacionMetodosComponent),
+  },
+  {
     path: 'billeteras',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -36,12 +41,6 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/transacciones/transacciones.component').then((m) => m.TransaccionesComponent),
-  },
-  {
-    path: 'estadisticas',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/estadisticas/estadisticas.component').then((m) => m.EstadisticasComponent),
   },
   {
     path: 'presupuestos',

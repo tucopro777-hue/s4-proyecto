@@ -12,7 +12,6 @@ public record MetaAhorroResponse( // Datos de meta devueltos al cliente
         // Progreso en porcentaje (0 a 100 o más si se supera el objetivo), con un decimal
         BigDecimal porcentaje, // Porcentaje de avance
         boolean completada, // Indica si ya se alcanzó el objetivo
-        BigDecimal porcentajeAutomatico, // Porcentaje de cada ingreso que se aporta; null = desactivado
-        int prioridad // Prioridad 1 a 10 para la asignación inteligente
+        BigDecimal porcentajeAutomatico // Porcentaje de cada ingreso que se aporta; null = desactivado
 ) {
 }

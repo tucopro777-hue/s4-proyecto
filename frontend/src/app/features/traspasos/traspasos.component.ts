@@ -5,7 +5,6 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
-import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { Billetera, BilleteraService } from '../billeteras/billetera.service';
 import { Traspaso, TraspasoService, mensajeErrorTraspaso } from './traspaso.service';
 
@@ -19,7 +18,7 @@ function hoy(): string {
 @Component({
   selector: 'app-traspasos',
   standalone: true,
-  imports: [ReactiveFormsModule, NavegacionComponent, ModalComponent, DecimalPipe, DatePipe],
+  imports: [ReactiveFormsModule, NavegacionComponent, DecimalPipe, DatePipe],
   templateUrl: './traspasos.component.html',
   styleUrl: './traspasos.component.scss',
 })
@@ -51,20 +50,6 @@ export class TraspasosComponent implements OnInit {
       .subscribe(() => this.form.controls.billeteraDestinoId.setValue(null));
   }
 
-  /** Controla la ventana emergente del formulario de alta. */
-  modalAbierto = false;
-
-  abrirModal(): void {
-    this.error = null;
-    this.exito = null;
-    this.modalAbierto = true;
-  }
-
-  cerrarModal(): void {
-    this.modalAbierto = false;
-    this.error = null;
-  }
-
   ngOnInit(): void {
     this.cargarTodo();
   }
@@ -94,6 +79,7 @@ export class TraspasosComponent implements OnInit {
   }
 
   transferir(): void {
+    if (this.guardando) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -118,7 +104,6 @@ export class TraspasosComponent implements OnInit {
       .subscribe({
         next: () => {
           this.guardando = false;
-          this.modalAbierto = false;
           this.exito = 'Traspaso realizado. Los saldos se han actualizado.';
           // Se conserva el origen para encadenar traspasos; el destino se vuelve a elegir
           this.form.reset({

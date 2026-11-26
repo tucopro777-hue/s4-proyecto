@@ -52,6 +52,10 @@ export class PresupuestoService {
 
 /** Traduce un error HTTP del backend a un mensaje para el usuario. */
 export function mensajeErrorPresupuesto(error: HttpErrorResponse): string {
+  if ([400, 403, 404, 409, 422].includes(error.status)) {
+    const mensaje = typeof error.error === 'string' ? error.error : error.error?.message;
+    if (typeof mensaje === 'string' && mensaje.trim()) return mensaje;
+  }
   switch (error.status) {
     case 0:
       return 'No se pudo conectar con el servidor. Verifica que el backend esté activo.';
@@ -66,14 +70,4 @@ export function mensajeErrorPresupuesto(error: HttpErrorResponse): string {
     default:
       return 'Ocurrió un error inesperado. Inténtalo de nuevo.';
   }
-}
-
-/** Porcentaje consumido del límite (puede pasar de 100 si está excedido). */
-export function porcentajeConsumo(p: Presupuesto): number {
-  return p.montoLimite > 0 ? (p.saldoConsumido / p.montoLimite) * 100 : 0;
-}
-
-/** Texto del estado; acompaña siempre al color para no depender solo de él. */
-export function etiquetaNivel(nivel: NivelPresupuesto): string {
-  return nivel === 'EXCEDIDO' ? 'Excedido' : nivel === 'ADVERTENCIA' ? 'Al límite' : 'Saludable';
 }
