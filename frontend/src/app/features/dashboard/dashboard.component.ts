@@ -4,14 +4,22 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
-import { DashboardResumen, DashboardService, mensajeErrorDashboard } from './dashboard.service';
-import { AnalisisFinancieroComponent } from './analisis-financiero.component';
+import { AlertasPresupuestoService } from '../../core/alertas/alertas-presupuesto.service';
+import { etiquetaNivel, porcentajeConsumo } from '../presupuestos/presupuesto.service';
+import {
+  DashboardResumen,
+  DashboardService,
+  GastoCategoria,
+  ProyeccionFinanciera,
+  VmeResultado,
+  mensajeErrorDashboard,
+} from './dashboard.service';
 
 /** Panel principal: indicadores del mes, gráfica de gastos por categoría y estado de los presupuestos. */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NavegacionComponent, DecimalPipe, AnalisisFinancieroComponent],
+  imports: [NavegacionComponent, DecimalPipe, PercentPipe, NgClass, RouterLink],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
