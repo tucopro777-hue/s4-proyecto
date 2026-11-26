@@ -71,30 +71,6 @@
       </section>
     }
 
-    @if (vme; as v) {
-      @if (v.datosSuficientes) {
-        <section class="panel" aria-labelledby="titulo-vme">
-          <header class="panel-cabecera">
-            <h2 id="titulo-vme">Valor monetario esperado</h2>
-            <span class="panel-nota">Mejor decisión: {{ v.mejorAlternativa }}</span>
-          </header>
-
-          <ul class="grafica">
-            @for (alternativa of v.alternativas; track alternativa.nombre) {
-              <li class="grafica-fila">
-                <span class="grafica-nombre">{{ alternativa.nombre }}</span>
-                <span class="grafica-valor">{{ alternativa.vme | number: '1.2-2' }}</span>
-                <span class="grafica-detalle" role="tooltip">
-                  Pago estable {{ alternativa.pagoEstable | number: '1.2-2' }} ·
-                  pago en déficit {{ alternativa.pagoDeficit | number: '1.2-2' }}
-                </span>
-              </li>
-            }
-          </ul>
-        </section>
-      }
-    }
-
     <div class="paneles">
       <section class="panel" aria-labelledby="titulo-gastos">
         <header class="panel-cabecera">
@@ -166,4 +142,5 @@
       </section>
     </div>
   }
+  <app-analisis-financiero />
 </main>

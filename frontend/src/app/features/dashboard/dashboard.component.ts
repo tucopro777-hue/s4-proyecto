@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { DecimalPipe, NgClass, PercentPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
+import { AnalisisFinancieroComponent } from './analisis-financiero.component';
 import { forkJoin } from 'rxjs';
 import { NavegacionComponent } from '../../shared/components/navegacion/navegacion.component';
 import { AlertasPresupuestoService } from '../../core/alertas/alertas-presupuesto.service';
@@ -11,7 +12,6 @@ import {
   DashboardService,
   GastoCategoria,
   ProyeccionFinanciera,
-  VmeResultado,
   mensajeErrorDashboard,
 } from './dashboard.service';
 
@@ -19,7 +19,7 @@ import {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NavegacionComponent, DecimalPipe, PercentPipe, NgClass, RouterLink],
+  imports: [NavegacionComponent, DecimalPipe, PercentPipe, NgClass, RouterLink, AnalisisFinancieroComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
@@ -31,8 +31,6 @@ export class DashboardComponent implements OnInit {
   gastos: GastoCategoria[] = [];
   /** Proyección de Markov; si falla, la tarjeta simplemente no se muestra. */
   proyeccion: ProyeccionFinanciera | null = null;
-  /** Valor monetario esperado de cada decisión; si falla, la tarjeta no se muestra. */
-  vme: VmeResultado | null = null;
   cargando = true;
   error: string | null = null;
 
@@ -69,11 +67,6 @@ export class DashboardComponent implements OnInit {
     this.dashboardService.proyeccion().subscribe({
       next: (proyeccion) => (this.proyeccion = proyeccion),
       error: () => (this.proyeccion = null),
-    });
-
-    this.dashboardService.vme().subscribe({
-      next: (vme) => (this.vme = vme),
-      error: () => (this.vme = null),
     });
   }
 
