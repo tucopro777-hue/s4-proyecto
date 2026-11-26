@@ -98,7 +98,6 @@ export class MetasComponent implements OnInit {
   }
 
   guardarEdicion(meta: MetaAhorro): void {
-    if (this.guardandoEdicion) return;
     if (this.formEdicion.invalid) {
       this.formEdicion.markAllAsTouched();
       return;
@@ -141,7 +140,6 @@ export class MetasComponent implements OnInit {
   }
 
   crear(): void {
-    if (this.guardando) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -176,7 +174,6 @@ export class MetasComponent implements OnInit {
   }
 
   aportar(meta: MetaAhorro): void {
-    if (this.aportandoId !== null) return;
     const monto = this.montosAporte[meta.id];
     if (monto === null || monto === undefined || Number(monto) <= 0) {
       this.error = 'El aporte debe ser mayor que 0.';

@@ -11,7 +11,6 @@ public record DashboardResponse(
         BigDecimal ingresosMes,
         BigDecimal gastosMes,
         BigDecimal balanceMes,
-        Long presupuestosExcedidos,
-        String divisa
+        Long presupuestosExcedidos
 ) {
 }

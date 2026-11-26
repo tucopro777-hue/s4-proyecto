@@ -27,7 +27,6 @@ export class LoginComponent {
   });
 
   enviar(): void {
-    if (this.cargando) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;

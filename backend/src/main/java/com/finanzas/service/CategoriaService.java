@@ -40,20 +40,11 @@ public class CategoriaService {
 
     @Transactional
     public CategoriaResponse crear(String emailUsuario, CategoriaRequest request) {
-        Usuario usuario = usuarioRepository.bloquearPorEmail(emailUsuario)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
-        String nombre = NombreCategoria.limpiar(request.nombre());
-        if (nombre.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de la categoría es obligatorio");
-        }
+        Usuario usuario = buscarUsuario(emailUsuario);
+        String nombre = request.nombre().trim();
 
-        for (Categoria existente : categoriaRepository.findByUsuarioIdOrderByNombreAsc(usuario.getId())) {
-            if (NombreCategoria.coinciden(nombre, existente.getNombre())) {
-                String estado = existente.isActiva() ? "" : " (desactivada)";
-                throw new ResponseStatusException(HttpStatus.CONFLICT,
-                        "Ya tienes la categoría \"" + existente.getNombre() + "\"" + estado
-                                + ". El nombre es igual o solo cambia por una letra añadida o faltante. Usa esa categoría o un nombre más específico.");
-            }
+        if (categoriaRepository.existsByUsuarioIdAndNombreIgnoreCase(usuario.getId(), nombre)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya tienes una categoría con ese nombre");
         }
 
         Categoria categoria = new Categoria(nombre, request.tipo(), request.color(), request.icono(), usuario);

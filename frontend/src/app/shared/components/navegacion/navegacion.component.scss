@@ -30,12 +30,10 @@
   margin: 0;
   padding: 0;
   flex: 1;
+  // En pantallas estrechas los enlaces se desplazan; la campanita y "Cerrar sesión" quedan siempre visibles
   min-width: 0;
   overflow-x: auto;
-
-  li {
-    flex-shrink: 0;
-  }
+  scrollbar-width: none;
 
   a {
     display: block;
@@ -59,7 +57,6 @@
 }
 
 .salir {
-  flex-shrink: 0;
   padding: 8px 14px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio);
@@ -89,4 +86,3 @@
     font-size: 0.9rem;
   }
 }
-.demo-indicador { color: var(--color-primario); border: 1px solid var(--color-primario); border-radius: 5px; padding: 3px 6px; font-size: .65rem; flex-shrink: 0; }

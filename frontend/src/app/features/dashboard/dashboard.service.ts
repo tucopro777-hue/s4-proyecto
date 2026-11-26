@@ -4,7 +4,6 @@ import { Observable } from 'rxjs';
 
 /** Indicadores del panel tal como los devuelve el backend (DashboardResponse). */
 export interface DashboardResumen {
-  divisa: string;
   saldoTotal: number;
   ingresosMes: number;
   gastosMes: number;

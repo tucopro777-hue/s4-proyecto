@@ -86,7 +86,7 @@ public class DatosDemoInicializador implements ApplicationRunner {
         }
 
         transactionTemplate.executeWithoutResult(estado -> sembrar());
-        log.info("Datos de demostración creados; consulta el acceso en la configuración local de desarrollo");
+        log.info("Datos de demo creados: {} / {}", EMAIL, PASSWORD);
     }
 
     private void sembrar() {

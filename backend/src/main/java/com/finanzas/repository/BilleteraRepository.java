@@ -12,8 +12,6 @@ import java.util.Optional;
 
 public interface BilleteraRepository extends JpaRepository<Billetera, Long> {
 
-    List<Billetera> findByUsuarioIdOrderByNombreAsc(Long usuarioId);
-
     List<Billetera> findByUsuarioIdAndActivaTrueOrderByNombreAsc(Long usuarioId);
 
     /** Evita dos billeteras activas con el mismo nombre (sin distinguir mayúsculas). */

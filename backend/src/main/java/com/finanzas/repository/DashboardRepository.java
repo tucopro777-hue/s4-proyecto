@@ -21,17 +21,17 @@ public interface DashboardRepository extends JpaRepository<Billetera, Long> {
 
     /** Suma de los saldos actuales de las billeteras activas del usuario. */
     @Query("select coalesce(sum(b.saldoActual), 0) from Billetera b "
-            + "where b.usuario.id = :usuarioId and b.activa = true and b.divisa = :divisa")
-    BigDecimal sumarSaldoActivo(@Param("usuarioId") Long usuarioId, @Param("divisa") String divisa);
+            + "where b.usuario.id = :usuarioId and b.activa = true")
+    BigDecimal sumarSaldoActivo(@Param("usuarioId") Long usuarioId);
 
     /** Total de movimientos no anulados de un tipo (INGRESO o GASTO) dentro de un rango de fechas. */
     @Query("select coalesce(sum(t.monto), 0) from Transaccion t "
             + "where t.usuario.id = :usuarioId and t.tipo = :tipo and t.anulada = false "
-            + "and t.fecha between :inicio and :fin and t.billetera.divisa = :divisa")
+            + "and t.fecha between :inicio and :fin")
     BigDecimal sumarMovimientosPeriodo(@Param("usuarioId") Long usuarioId,
                                        @Param("tipo") TipoTransaccion tipo,
                                        @Param("inicio") LocalDate inicio,
-                                       @Param("fin") LocalDate fin, @Param("divisa") String divisa);
+                                       @Param("fin") LocalDate fin);
 
     /** Gasto no anulado del periodo agrupado por categoría, de mayor a menor. */
     @Query("select new com.finanzas.dto.GastoCategoriaResponse(c.id, c.nombre, c.color, sum(t.monto)) "

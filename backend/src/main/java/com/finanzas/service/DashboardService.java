@@ -34,12 +34,6 @@ public class DashboardService {
 
     @Transactional(readOnly = true)
     public DashboardResponse obtenerResumen(String emailUsuario) {
-        return obtenerResumen(emailUsuario, "BOB");
-    }
-
-    @Transactional(readOnly = true)
-    public DashboardResponse obtenerResumen(String emailUsuario, String divisa) {
-        if (divisa == null || !divisa.matches("[A-Z]{3}")) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Divisa inválida");
         Usuario usuario = buscarUsuario(emailUsuario);
 
         // Todos los importes del mes se calculan sobre el mes en curso
@@ -47,16 +41,16 @@ public class DashboardService {
         LocalDate inicio = mes.atDay(1);
         LocalDate fin = mes.atEndOfMonth();
 
-        BigDecimal saldoTotal = dashboardRepository.sumarSaldoActivo(usuario.getId(), divisa);
+        BigDecimal saldoTotal = dashboardRepository.sumarSaldoActivo(usuario.getId());
         BigDecimal ingresosMes = dashboardRepository.sumarMovimientosPeriodo(
-                usuario.getId(), TipoTransaccion.INGRESO, inicio, fin, divisa);
+                usuario.getId(), TipoTransaccion.INGRESO, inicio, fin);
         BigDecimal gastosMes = dashboardRepository.sumarMovimientosPeriodo(
-                usuario.getId(), TipoTransaccion.GASTO, inicio, fin, divisa);
+                usuario.getId(), TipoTransaccion.GASTO, inicio, fin);
         BigDecimal balanceMes = ingresosMes.subtract(gastosMes);
         Long presupuestosExcedidos = dashboardRepository.contarExcedidos(
                 usuario.getId(), mes.getYear(), mes.getMonthValue());
 
-        return new DashboardResponse(saldoTotal, ingresosMes, gastosMes, balanceMes, presupuestosExcedidos, divisa);
+        return new DashboardResponse(saldoTotal, ingresosMes, gastosMes, balanceMes, presupuestosExcedidos);
     }
 
     /** Distribución del gasto del mes en curso por categoría (para la gráfica del panel). */
