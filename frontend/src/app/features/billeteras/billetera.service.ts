@@ -41,6 +41,10 @@ export class BilleteraService {
 
 /** Traduce un error HTTP del backend a un mensaje para el usuario. */
 export function mensajeErrorBilletera(error: HttpErrorResponse): string {
+  if ([400, 403, 404, 409, 422].includes(error.status)) {
+    const mensaje = typeof error.error === 'string' ? error.error : error.error?.message;
+    if (typeof mensaje === 'string' && mensaje.trim()) return mensaje;
+  }
   switch (error.status) {
     case 0:
       return 'No se pudo conectar con el servidor. Verifica que el backend esté activo.';

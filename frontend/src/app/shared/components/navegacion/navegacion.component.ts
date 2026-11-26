@@ -17,6 +17,13 @@ export class NavegacionComponent {
   private readonly router = inject(Router);
   private readonly alertas = inject(AlertasPresupuestoService);
 
+  get cuentaDemo(): boolean {
+    try {
+      const payload = this.auth.obtenerToken()?.split('.')[1];
+      return !!payload && JSON.parse(atob(payload.replace(/-/g,'+').replace(/_/g,'/'))).sub === 'demo@finanzas.test';
+    } catch { return false; }
+  }
+
   cerrarSesion(): void {
     this.auth.logout();
     this.alertas.limpiar();

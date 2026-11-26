@@ -1,128 +1,70 @@
 package com.finanzas.service;
 
-import com.finanzas.dto.ProyeccionFinancieraResponse;
-import com.finanzas.dto.VmeResponse;
-import com.finanzas.dto.VmeResponse.Alternativa;
-import com.finanzas.model.TipoTransaccion;
-import com.finanzas.model.Transaccion;
-import com.finanzas.model.Usuario;
-import com.finanzas.repository.TransaccionRepository;
-import com.finanzas.repository.UsuarioRepository;
-import org.springframework.http.HttpStatus;
+import com.finanzas.dto.*;
+import com.finanzas.dto.VmeResponse.Evaluacion;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
-
 import java.math.BigDecimal;
-import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.math.RoundingMode;
+import java.util.*;
 
-/**
- * Valor Monetario Esperado de tres decisiones: mantener el gasto actual o recortarlo 10 % o 20 %.
- *
- * Las probabilidades del próximo mes salen de la cadena de Markov ({@link ProyeccionFinancieraService}).
- * El pago de cada estado sale del histórico de los últimos 6 meses completos: el balance promedio
- * de los meses en ese estado más el ahorro de recortar el gasto promedio de ese estado.
- *
- * VME(alternativa) = P(ESTABLE) × pago(ESTABLE) + P(DEFICIT) × pago(DEFICIT)
- */
+/** Comparador de escenarios configurados por el usuario. No ejecuta inversiones ni transferencias. */
 @Service
 public class VmeService {
-
-    private static final int MESES_HISTORIAL = 6;
-    private static final int DEFICIT = 0;
-    private static final int ESTABLE = 1;
-    /** Fracciones de recorte de gastos que se comparan como decisiones. */
-    private static final double[] REDUCCIONES = {0.0, 0.10, 0.20};
-
-    private final ProyeccionFinancieraService proyeccionFinancieraService;
-    private final TransaccionRepository transaccionRepository;
-    private final UsuarioRepository usuarioRepository;
-
-    public VmeService(ProyeccionFinancieraService proyeccionFinancieraService,
-                      TransaccionRepository transaccionRepository,
-                      UsuarioRepository usuarioRepository) {
-        this.proyeccionFinancieraService = proyeccionFinancieraService;
-        this.transaccionRepository = transaccionRepository;
-        this.usuarioRepository = usuarioRepository;
+    public VmeResponse calcular(BigDecimal disponible, MarkovResponse markov, VmeRequest request) {
+        if (!request.divisa().equals(markov.divisa())) throw invalido("La divisa no coincide");
+        // Obtiene las probabilidades de los estados estable y déficit calculadas por Markov.
+        var p = markov.probabilidades();
+        if (p != null) validarProbabilidades(p);
+        Set<String> nombres = new HashSet<>();
+        List<Evaluacion> evaluaciones = new ArrayList<>();
+        for (var a : request.alternativas()) {
+            if (!nombres.add(a.nombre().trim().toLowerCase(Locale.ROOT))) throw invalido("Los nombres de alternativas deben ser únicos");
+            BigDecimal liquidez = disponible.subtract(a.asignacion());
+            // Calcula el saldo final de cada escenario sumando su ganancia o pérdida al saldo disponible.
+            BigDecimal estable = disponible.add(a.resultadoEstable());
+            BigDecimal deficit = disponible.add(a.resultadoDeficit());
+            String motivo = disponible.signum() <= 0 ? "No hay saldo positivo disponible"
+                    : liquidez.compareTo(request.reservaMinima()) < 0 ? "La asignación deja menos liquidez que la reserva mínima"
+                    : estable.signum() < 0 || deficit.signum() < 0 ? "La pérdida de un escenario supera el saldo disponible" : "Cumple saldo y reserva mínima";
+            // Comprueba que haya saldo positivo, se conserve la reserva y ningún escenario deje saldo negativo.
+            boolean viable = disponible.signum() > 0 && liquidez.compareTo(request.reservaMinima()) >= 0
+                    && estable.signum() >= 0 && deficit.signum() >= 0;
+            // VME = P(estable) * saldo final estable + P(déficit) * saldo final en déficit.
+            // Ejemplo: 0.70 * 1100 + 0.30 * 900 = 1040. Sin probabilidades no se calcula.
+            BigDecimal vme = p == null ? null : p.estable().multiply(estable).add(p.deficit().multiply(deficit));
+            evaluaciones.add(new Evaluacion(a.nombre().trim(), a.asignacion(), liquidez, a.resultadoEstable(), a.resultadoDeficit(),
+                    estable, deficit, viable, motivo, vme));
+        }
+        // Busca el mayor VME entre las alternativas viables que tienen un resultado calculado.
+        BigDecimal maximo = evaluaciones.stream().filter(e -> e.viable() && e.vme() != null)
+                .map(Evaluacion::vme).max(BigDecimal::compareTo).orElse(null);
+        // Selecciona todas las alternativas con ese máximo para conservar los empates.
+        List<String> ganadoras = maximo == null ? List.of() : evaluaciones.stream()
+                .filter(e -> e.viable() && e.vme().compareTo(maximo) == 0).map(Evaluacion::nombre).toList();
+        String explicacion = p == null ? "Sin probabilidades estimables de Markov no se calcula VME ni se recomienda."
+                : ganadoras.isEmpty() ? "Ninguna alternativa cumple las restricciones de saldo y reserva."
+                : "Mayor patrimonio esperado entre las alternativas viables: " + String.join(", ", ganadoras)
+                    + (ganadoras.size() > 1 ? ". Hay empate." : ".")
+                    + " La comparación usa precisión interna antes de redondear a dos decimales.";
+        // Redondea el VME a dos decimales para mostrarlo; las ganadoras se eligen antes de redondear.
+        var salida = evaluaciones.stream().map(e -> new Evaluacion(e.nombre(), e.asignacion(), e.liquidezRestante(),
+                e.resultadoEstable(), e.resultadoDeficit(), e.patrimonioEstable(), e.patrimonioDeficit(), e.viable(), e.motivo(),
+                e.vme() == null ? null : e.vme().setScale(2, RoundingMode.HALF_UP))).toList();
+        return new VmeResponse(request.divisa(), disponible, request.reservaMinima(), markov, salida, ganadoras,
+                explicacion + " Simulación de un mes con pagos netos configurados por ti; no son tasas verificadas ni rendimientos garantizados. No mueve dinero.");
     }
 
-    @Transactional(readOnly = true)
-    public VmeResponse calcular(String emailUsuario) {
-        ProyeccionFinancieraResponse markov = proyeccionFinancieraService.proyectar(emailUsuario);
-        if (!markov.datosSuficientes()) {
-            return new VmeResponse(false, null, List.of(), null);
+    public void validarProbabilidades(MarkovResponse.Probabilidades p) {
+        if (p.estable() == null || p.deficit() == null || p.estable().signum() < 0 || p.deficit().signum() < 0
+                || p.estable().compareTo(BigDecimal.ONE) > 0 || p.deficit().compareTo(BigDecimal.ONE) > 0
+                || p.estable().add(p.deficit()).compareTo(BigDecimal.ONE) != 0) {
+            throw invalido("Las probabilidades deben estar entre 0 y 1 y sumar 1");
         }
-
-        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
-
-        YearMonth ultimo = YearMonth.now().minusMonths(1);
-        YearMonth primero = ultimo.minusMonths(MESES_HISTORIAL - 1);
-        List<Transaccion> movimientos = transaccionRepository.buscarConFiltros(
-                usuario.getId(), primero.atDay(1), ultimo.atEndOfMonth(), null, null);
-
-        // Ingresos [0] y gastos [1] de cada mes
-        Map<YearMonth, BigDecimal[]> porMes = new HashMap<>();
-        for (Transaccion t : movimientos) {
-            BigDecimal[] totales = porMes.computeIfAbsent(YearMonth.from(t.getFecha()),
-                    mes -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
-            int indice = t.getTipo() == TipoTransaccion.INGRESO ? 0 : 1;
-            totales[indice] = totales[indice].add(t.getMonto());
-        }
-
-        // Suma de balances y de gastos, y número de meses, por estado
-        double[] sumaBalance = new double[2];
-        double[] sumaGasto = new double[2];
-        int[] meses = new int[2];
-        for (BigDecimal[] totales : porMes.values()) {
-            BigDecimal balance = totales[0].subtract(totales[1]);
-            int estado = balance.signum() < 0 ? DEFICIT : ESTABLE;
-            sumaBalance[estado] += balance.doubleValue();
-            sumaGasto[estado] += totales[1].doubleValue();
-            meses[estado]++;
-        }
-
-        // Sin meses de ambos estados no hay pago histórico que promediar para cada uno
-        if (meses[DEFICIT] == 0 || meses[ESTABLE] == 0) {
-            return new VmeResponse(false, markov.estadoActual(), List.of(), null);
-        }
-
-        double pagoBaseEstable = sumaBalance[ESTABLE] / meses[ESTABLE];
-        double pagoBaseDeficit = sumaBalance[DEFICIT] / meses[DEFICIT];
-        double gastoEstable = sumaGasto[ESTABLE] / meses[ESTABLE];
-        double gastoDeficit = sumaGasto[DEFICIT] / meses[DEFICIT];
-        double probEstable = markov.probabilidadEstableSiguiente();
-        double probDeficit = markov.probabilidadDeficitSiguiente();
-
-        List<Alternativa> alternativas = new ArrayList<>();
-        for (double reduccion : REDUCCIONES) {
-            double pagoEstable = pagoBaseEstable + reduccion * gastoEstable;
-            double pagoDeficit = pagoBaseDeficit + reduccion * gastoDeficit;
-            double vme = probEstable * pagoEstable + probDeficit * pagoDeficit;
-            alternativas.add(new Alternativa(
-                    nombreAlternativa(reduccion), reduccion,
-                    redondear(pagoEstable), redondear(pagoDeficit), redondear(vme)));
-        }
-
-        Alternativa mejor = alternativas.stream()
-                .max(Comparator.comparingDouble(Alternativa::vme))
-                .orElseThrow();
-
-        return new VmeResponse(true, markov.estadoActual(), alternativas, mejor.nombre());
     }
 
-    private static String nombreAlternativa(double reduccion) {
-        return reduccion == 0.0
-                ? "Mantener gasto actual"
-                : "Reducir gastos " + Math.round(reduccion * 100) + " %";
-    }
-
-    private static double redondear(double valor) {
-        return Math.round(valor * 100.0) / 100.0;
+    private ResponseStatusException invalido(String mensaje) {
+        return new ResponseStatusException(HttpStatus.BAD_REQUEST, mensaje);
     }
 }

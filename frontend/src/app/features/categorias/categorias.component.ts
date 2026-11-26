@@ -88,6 +88,7 @@ export class CategoriasComponent implements OnInit {
   }
 
   registrar(): void {
+    if (this.guardando) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;

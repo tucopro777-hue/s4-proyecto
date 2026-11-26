@@ -94,6 +94,7 @@ export class TraspasosComponent implements OnInit {
   }
 
   transferir(): void {
+    if (this.guardando) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;

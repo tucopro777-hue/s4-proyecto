@@ -39,6 +39,7 @@ export class PresupuestosComponent implements OnInit {
   ];
   readonly anios = [2025, 2026, 2027];
 
+  private versionConsulta = 0;
   presupuestos: Presupuesto[] = [];
   categoriasGasto: Categoria[] = [];
   cargando = true;
@@ -107,6 +108,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   crear(): void {
+    if (this.guardando) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -204,6 +206,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   private cargarDatos(): void {
+    const version = ++this.versionConsulta;
     forkJoin({
       categorias: this.categoriaService.listar('GASTO'),
       presupuestos: this.presupuestoService.listar(
@@ -215,10 +218,12 @@ export class PresupuestosComponent implements OnInit {
       .subscribe({
         next: ({ categorias, presupuestos }) => {
           this.categoriasGasto = categorias;
+          if (version !== this.versionConsulta) return;
           this.presupuestos = presupuestos;
           this.cargando = false;
         },
         error: (err: HttpErrorResponse) => {
+          if (version !== this.versionConsulta) return;
           this.cargando = false;
           this.error = mensajeErrorPresupuesto(err);
         },
@@ -226,18 +231,22 @@ export class PresupuestosComponent implements OnInit {
   }
 
   private cargarPresupuestos(): void {
+    const version = ++this.versionConsulta;
+    this.error = null;
     this.cargando = true;
     this.presupuestoService
       .listar(this.periodo.controls.anio.value, this.periodo.controls.mes.value)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (presupuestos) => {
+          if (version !== this.versionConsulta) return;
           this.presupuestos = presupuestos;
           this.cargando = false;
           // Tras crear o editar un límite, la campanita se pone al día
           this.alertas.refrescar();
         },
         error: (err: HttpErrorResponse) => {
+          if (version !== this.versionConsulta) return;
           this.cargando = false;
           this.error = mensajeErrorPresupuesto(err);
         },

@@ -8,7 +8,7 @@ import { catchError, throwError } from 'rxjs';
  * Traduce cualquier HttpErrorResponse a un mensaje claro y amigable ANTES de
  * que llegue al componente, cubriendo los casos que el servidor no puede
  * describir (sin conexión, 500, etc.). El error traducido viaja en
- * err.error.mensaje como string, así todos los componentes muestran un solo
+ * err.error como string, así todos los componentes muestran un solo
  * formato sin repetir lógica de switch.
  */
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
@@ -30,6 +30,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
 /** Traduce un error HTTP a un mensaje para el usuario. */
 function traducirErrorHttp(error: HttpErrorResponse): string {
+  if ([400, 403, 404, 409, 422].includes(error.status) &&
+      typeof error.error?.message === 'string' && error.error.message.trim()) {
+    return error.error.message;
+  }
   switch (error.status) {
     case 0:
       return 'No se pudo conectar con el servidor. Verifica que el backend esté activo.';
@@ -42,6 +46,9 @@ function traducirErrorHttp(error: HttpErrorResponse): string {
     case 404:
       return 'El recurso solicitado no existe.';
     case 409:
+      if (typeof error.error?.message === 'string' && error.error.message.trim()) {
+        return error.error.message;
+      }
       return 'La operación entra en conflicto con el estado actual.';
     case 422:
       return 'La operación no puede completarse con los datos actuales.';
