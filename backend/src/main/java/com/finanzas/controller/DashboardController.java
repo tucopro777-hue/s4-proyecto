@@ -3,10 +3,8 @@ package com.finanzas.controller;
 import com.finanzas.dto.DashboardResponse;
 import com.finanzas.dto.GastoCategoriaResponse;
 import com.finanzas.dto.ProyeccionFinancieraResponse;
-import com.finanzas.dto.VmeResponse;
 import com.finanzas.service.DashboardService;
 import com.finanzas.service.ProyeccionFinancieraService;
-import com.finanzas.service.VmeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,26 +20,17 @@ public class DashboardController {
 
     private final DashboardService dashboardService;
     private final ProyeccionFinancieraService proyeccionFinancieraService;
-    private final VmeService vmeService;
 
     public DashboardController(DashboardService dashboardService,
-                               ProyeccionFinancieraService proyeccionFinancieraService,
-                               VmeService vmeService) {
+                               ProyeccionFinancieraService proyeccionFinancieraService) {
         this.dashboardService = dashboardService;
         this.proyeccionFinancieraService = proyeccionFinancieraService;
-        this.vmeService = vmeService;
     }
 
     /** GET /api/dashboard/proyeccion: probabilidades del próximo mes según la cadena de Markov. */
     @GetMapping("/proyeccion")
     public ResponseEntity<ProyeccionFinancieraResponse> proyeccion(Authentication autenticacion) {
         return ResponseEntity.ok(proyeccionFinancieraService.proyectar(autenticacion.getName()));
-    }
-
-    /** GET /api/dashboard/vme: valor monetario esperado de cada decisión para el próximo mes. */
-    @GetMapping("/vme")
-    public ResponseEntity<VmeResponse> vme(Authentication autenticacion) {
-        return ResponseEntity.ok(vmeService.calcular(autenticacion.getName()));
     }
 
     /** GET /api/dashboard/resumen: indicadores del mes para el usuario autenticado. */
